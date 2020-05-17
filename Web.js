@@ -31,7 +31,7 @@ Web.handleRequest = function(response, request)
         route.endpoint(response, request);
 
         // Return FINISH on their behalf.
-        return FINISH;
+        return FINISH; 
     }
 
     //////////////////////////////////////////

@@ -21,6 +21,7 @@ LightBlog.init = function()
 
     Web.init(); 
     Web.addRoute(["/", "/index"], "index.ejs");  
+    Web.addRoute(["/view"], "view.ejs");  
 }
 
 /**
@@ -50,7 +51,7 @@ LightBlog.initDb = function()
         con.prepare(`CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             owner INTEGER NOT NULL,
-            title VARCHAR(255) UNIQUE,
+            title TEXT UNIQUE,
             content TEXT, 
             preview_content TEXT, 
             draft_content TEXT, 
@@ -97,11 +98,13 @@ LightBlog.fetchHomepage = function(page = 0)
     try 
     {
         con.prepare(`SELECT users.display_name, posts.preview_content, posts.title, posts.owner 
-            FROM posts INNER JOIN users ON posts.id=posts.owner
+            FROM posts INNER JOIN users ON users.id=posts.owner
+            LIMIT 10 OFFSET ?
         `);
+        con.bind(page);
         con.query();
 
-        while (con.next())
+        while (con.next()) 
         {
             posts.push(
                 {
@@ -134,5 +137,66 @@ LightBlog.fetchHomepage = function(page = 0)
 
 LightBlog.fetchPost = function(id)
 {
-    
+    // Check if we we're given an invalid id.
+    if (id == null)
+        return null;
+
+    // Remove any dashes.
+    id = id.replace("-", " ");
+
+    // Remove any question marks. 
+    id = id.replace("?", "");
+
+    // Initialize a db object.
+    let con = db.init(LightBlog.DB_CONNECTION_STRING);
+
+    // Catch any exceptions.
+    try 
+    {
+        con.prepare(`SELECT users.display_name, posts.content, posts.title, posts.owner 
+            FROM posts INNER JOIN users ON posts.id=posts.owner WHERE posts.title=? 
+            LIMIT 1
+        `);
+
+        con.bind(id);
+        con.query();
+
+        //////////////////////////////////////
+
+        // Check if we got any results.
+        if (!con.next())
+        {
+            con.close();
+
+            return null;
+        }
+
+        //////////////////////////////////////
+
+        const post = 
+        {
+            author: con.fetch(DB_STRING, 0),
+            content: con.fetch(DB_STRING, 1),
+            title: con.fetch(DB_STRING, 2)
+        };
+
+        //////////////////////////////////////
+
+        con.close();
+
+        //////////////////////////////////////
+
+        return post;
+    } 
+    catch (e)
+    {
+        // Log that we've hit an exception.
+        print(`${LightBlog.LOG_TAG} Failed fetch post (${id}, ${e}). `);
+
+        // Close our database connection.
+        con.close();
+    }
+
+    // Return a null object indicating an error.
+    return null
 }
