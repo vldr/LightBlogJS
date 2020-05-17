@@ -1,5 +1,6 @@
 load("Web.js");
 load("Scrypt.js");
+load("Marked.js");
 
 //////////////////////////////////////////////
  
@@ -56,7 +57,8 @@ LightBlog.initDb = function()
             preview_content TEXT, 
             draft_content TEXT, 
             post_date TEXT,
-            edit_date TEXT
+            edit_date TEXT,
+            cover_photo TEXT
         )`);
         con.exec();
 
@@ -97,7 +99,8 @@ LightBlog.fetchHomepage = function(page = 0)
     // Catch any exceptions.
     try 
     {
-        con.prepare(`SELECT users.display_name, posts.preview_content, posts.title, posts.owner 
+        con.prepare(`SELECT 
+            users.display_name, posts.preview_content, posts.title, posts.post_date, posts.cover_photo, posts.owner
             FROM posts INNER JOIN users ON users.id=posts.owner
             LIMIT 10 OFFSET ?
         `);
@@ -110,7 +113,9 @@ LightBlog.fetchHomepage = function(page = 0)
                 {
                     author: con.fetch(DB_STRING, 0),
                     content: con.fetch(DB_STRING, 1),
-                    title: con.fetch(DB_STRING, 2)
+                    title: con.fetch(DB_STRING, 2),
+                    date: con.fetch(DB_STRING, 3),
+                    coverPhoto: con.fetch(DB_STRING, 4)
                 }
             );
         }

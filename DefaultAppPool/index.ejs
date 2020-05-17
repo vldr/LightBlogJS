@@ -7,14 +7,28 @@
     <body>
         <% const posts = LightBlog.fetchHomepage(); %> 
         <% if (posts) { %> 
-            <% for (const post of posts) {%>
-                <div>
-                    <h1><%= post.title %> <span><%= post.author %> </span></h1>
-                    <p><%= post.content %></p>
-                </div>
-            <% } %>
+            <div class="content">
+                <% for (const post of posts) {%>
+                    <div class="postBox">
+                        <% if (post.coverPhoto) { %> 
+                            <div class="coverPhoto" style="background-image:url(<%= post.coverPhoto %>)"></div>
+                        <% } %> 
+
+                        <div class="postHeader">
+                            <a class="postTitle" href="view?<%= post.title.replace(" ", "-") %>"><%= post.title %></a>
+                            <span class="postDate"><%= post.date %></span>
+                        </div>
+                        <div class="postContent">
+                            <p><%= post.content %></p>
+                        </div>
+                        <div class="postFooter">
+                            <span class="postAuthor"><%= post.author %></span>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
         <% } else { %> 
-            <h1>Umable to fetch posts.</h1>
+            <h1>Unable to fetch posts.</h1>
         <% } %> 
     </body>
 </html>  
