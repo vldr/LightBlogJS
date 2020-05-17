@@ -11,15 +11,15 @@
                 <% for (const post of posts) {%>
                     <div class="postBox">
                         <% if (post.coverPhoto) { %> 
-                            <div class="coverPhoto" style="background-image:url(<%= post.coverPhoto %>)"></div>
+                            <div class="coverPhoto" style="background-image:url('<%= post.coverPhoto %>')"></div>
                         <% } %> 
 
                         <div class="postHeader">
                             <a class="postTitle" href="view?<%= post.title.replace(" ", "-") %>"><%= post.title %></a>
-                            <span class="postDate"><%= post.date %></span>
+                            <div class="postDate"><%= post.date %></div>
                         </div>
                         <div class="postContent">
-                            <p><%= post.content %></p>
+                            <p><%- post.content %></p>
                         </div>
                         <div class="postFooter">
                             <span class="postAuthor"><%= post.author %></span>

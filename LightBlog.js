@@ -147,7 +147,7 @@ LightBlog.fetchPost = function(id)
         return null;
 
     // Remove any dashes.
-    id = id.replace("-", " ");
+    id = id.replace("-", " "); 
 
     // Remove any question marks. 
     id = id.replace("?", "");
@@ -158,7 +158,7 @@ LightBlog.fetchPost = function(id)
     // Catch any exceptions.
     try 
     {
-        con.prepare(`SELECT users.display_name, posts.content, posts.title, posts.owner 
+        con.prepare(`SELECT users.display_name, posts.content, posts.title, posts.post_date, posts.cover_photo, posts.owner 
             FROM posts INNER JOIN users ON posts.id=posts.owner WHERE posts.title=? 
             LIMIT 1
         `);
@@ -182,7 +182,9 @@ LightBlog.fetchPost = function(id)
         {
             author: con.fetch(DB_STRING, 0),
             content: con.fetch(DB_STRING, 1),
-            title: con.fetch(DB_STRING, 2)
+            title: con.fetch(DB_STRING, 2),
+            date: con.fetch(DB_STRING, 3),
+            coverPhoto: con.fetch(DB_STRING, 4)
         };
 
         //////////////////////////////////////
