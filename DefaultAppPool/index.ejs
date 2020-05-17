@@ -3,6 +3,18 @@
     <head>  
         <title>Lightblog</title>
         <link href="style.css" rel="stylesheet" media="screen">
-    </head>       
-    <body></body>
+    </head>        
+    <body>
+        <% const posts = LightBlog.fetchHomepage(); %> 
+        <% if (posts) { %> 
+            <% for (const post of posts) {%>
+                <div>
+                    <h1><%= post.title %> <span><%= post.author %> </span></h1>
+                    <p><%= post.content %></p>
+                </div>
+            <% } %>
+        <% } else { %> 
+            <h1>Umable to fetch posts.</h1>
+        <% } %> 
+    </body>
 </html>  

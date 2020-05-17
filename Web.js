@@ -69,6 +69,8 @@ Web.handleRoute = function(response, request, routeTemplate)
         // Add the cache to the cache table.
         Web.cacheTable[request.getPath()] = cache;
 
+        print(`${Web.LOG_TAG} Caching response for ${request.getPath()}`);
+
         // Write our response.
         response.write(cache, "text/html", "gzip")
     }
