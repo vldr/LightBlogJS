@@ -1,0 +1,34 @@
+<% const title = request.getQueryString(); %> 
+<% const post = LightBlog.fetchPost(title); %> 
+
+<!DOCTYPE html>  
+<html> 
+    <head>  
+        <title><%= post ? post.title : "LightBlog" %></title>
+        <link href="style.css" rel="stylesheet" media="screen">
+    </head>         
+    <body>
+        <div class="content">
+            <% if (post) { %> 
+                <div class="postBox postBoxOnPage">
+                    <% if (post.coverPhoto) { %> 
+                        <div class="coverPhotoOnPage" style="background-image:url('<%= post.coverPhoto %>')"></div>
+                    <% } %> 
+
+                    <div class="postHeader">
+                        <h1 class="postTitleOnPage"><%= post.title %></h1>
+                        <span class="postDate"><%= post.date %></span>
+                    </div>
+                    <div class="postContent">
+                        <p><%- post.content %></p>
+                    </div>
+                    <div class="postFooter">
+                        <span class="postAuthor"><%= post.author %></span>
+                    </div>
+                </div>
+            <% } else { %> 
+                <h1>Unable to find this post.</h1>
+            <% } %> 
+        </div>
+    </body>
+</html>  
