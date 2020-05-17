@@ -1,5 +1,9 @@
+load("Web.js");
 load("Scrypt.js");
 
+//////////////////////////////////////////////
+ 
+// Setup our light blog object.
 var LightBlog = {};
 
 // The connection string to the database.
@@ -7,6 +11,17 @@ LightBlog.DB_CONNECTION_STRING = "sqlite3:db=C:\\Users\\Public\\db.db";
 
 // The prefixed tag used on logs.
 LightBlog.LOG_TAG = "[LIGHTBLOG]";
+
+/**
+ * Initializes the lightblog database and web framework.
+ */
+LightBlog.init = function()
+{
+    LightBlog.initDb();
+
+    Web.init(); 
+    Web.addRoute(["/", "/index"], "index.ejs");  
+}
 
 /**
  * Initializes the database.

@@ -8,7 +8,7 @@ var Web = {};
 Web.LOG_TAG = "[WEB]";
 
 // A table for routing to different pages.
-Web.routeTable = {}; 
+Web.routeTable = {};
 
 // A table containing all cached webpages.
 Web.cacheTable = {}; 
@@ -23,6 +23,16 @@ Web.handleRequest = function(response, request)
     
     // Check if our route exists, if not, return CONTINUE.
     if (!route) return CONTINUE;
+
+    // Check if our route is an endpoint.
+    if (route.endpoint) 
+    {
+        // Call our endpoint callback.
+        route.endpoint(response, request);
+
+        // Return FINISH on their behalf.
+        return FINISH;
+    }
 
     //////////////////////////////////////////
 
@@ -103,6 +113,19 @@ Web.addRoute = function(paths, fileName)
 
         print(`${Web.LOG_TAG} Setting up route: ${path} -> ${fileName}`);
 	}
+}
+
+/**
+ * Adds endpoint to the route table.
+ */
+Web.addEndpoint = function(path, callback)
+{
+    Web.routeTable[path] = 
+    {
+        endpoint: callback
+    }; 
+
+    print(`${Web.LOG_TAG} Setting up endpoint: ${path}`);
 }
 
 /**
