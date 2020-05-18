@@ -13,7 +13,7 @@
     </head>         
     <body>
         <div class="header-nav header-nav-post">
-			<a href="/"><img class="logo-header" src="http://vldr.org/manager-old/Assets/img/ui/logo-big.png"></a>
+			<a href="/"><img class="logo-header" src="https://vldr.org/manager/images/ui/logo-big.png"></a>
 			<ul class="navbar">
 				<li><a href="http://vldr.org/index.html">Home</a></li>
 				<li><a href="http://vldr.org/manager/">Vault</a></li>
@@ -24,10 +24,10 @@
         <div class="content">
             <% if (post) { %> 
                 <div class="postBox postBoxOnPage">
-                    <% if (post.coverPhoto) { %> 
-                        <div class="coverPhotoOnPage" style="background-image:url('<%= post.coverPhoto %>')"></div>
-                    <% } %> 
-
+                    <div class="coverPhotoOnPage" 
+                        style=<%= post.coverPhoto ? `background-image:url(${post.coverPhoto})` 
+                        : `background:#dedede;height:170px;` %>>
+                    </div>
                     <div class="viewContainer">
                         <div class="postHeader">
                             <h1 class="postTitleOnPage"><%= post.title %></h1>
