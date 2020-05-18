@@ -44,8 +44,6 @@ Web.handleRequest = function(response, request)
         // Write our cached response.
         response.write(cache, "text/html", "gzip");
 
-        print("cached");
-
         // Return finish.
         return FINISH;
     }

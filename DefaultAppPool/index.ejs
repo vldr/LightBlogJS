@@ -15,7 +15,7 @@
                         <% } %> 
 
                         <div class="postHeader">
-                            <a class="postTitle" href="view?<%= post.title.replace(" ", "-") %>"><%= post.title %></a>
+                            <a class="postTitle" href="view?<%= post.title.replace(" ", "-").toLowerCase() %>"><%= post.title %></a>
                             <div class="postDate"><%= post.date %></div>
                         </div>
                         <div class="postContent">

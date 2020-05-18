@@ -127,7 +127,7 @@ LightBlog.fetchHomepage = function(page = 0)
     catch (e)
     {
         // Log that we've hit an exception.
-        print(`${LightBlog.LOG_TAG} Failed fetch homepage (${page}). ${e}`);
+        print(`${LightBlog.LOG_TAG} Failed fetch homepage (${page}, ${e}).`);
 
         // Close our database connection.
         con.close();
@@ -159,20 +159,17 @@ LightBlog.fetchPost = function(id)
     try 
     {
         con.prepare(`SELECT users.display_name, posts.content, posts.title, posts.post_date, posts.cover_photo, posts.owner 
-            FROM posts INNER JOIN users ON posts.id=posts.owner WHERE posts.title=? 
-            LIMIT 1
+            FROM posts INNER JOIN users ON users.id=posts.owner WHERE LOWER(posts.title)=?
         `);
 
         con.bind(id);
-        con.query();
 
         //////////////////////////////////////
 
         // Check if we got any results.
-        if (!con.next())
+        if (!con.queryRow())
         {
             con.close();
-
             return null;
         }
 
