@@ -1,0 +1,38 @@
+<!DOCTYPE html>  
+<html> 
+    <head>  
+        <title>LightBlog Administration</title>
+        <link href="/admin.css" rel="stylesheet" media="screen">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>         
+    <body> 
+        <div class="topbar">
+            <a href="index">Control Panel</a> / 
+        </div>
+        <div class="menu">
+            <a href="index">Create New Post</a>
+            <a href="index">Edit Profile</a>
+        </div>
+        <div class="posts"> 
+            <% const posts = LightBlog.fetchHomepage(-1); %> 
+            <% if (posts) { %> 
+                <% for (const post of posts) {%>
+                    <div class="postBox">
+                        <% if (post.coverPhoto) { %> 
+                            <div class="coverPhoto" style="background-image:url('<%= post.coverPhoto %>')"></div>
+                        <% } %>
+
+                        <div class="postHeader">
+                            <a class="postTitle" href="edit?<%= post.id %>"><%= post.title %></a>
+                            <div class="postDate"><%= post.date %> - <%= post.author %></div>
+                        </div>
+                    </div>
+                <% } %>
+            <% } else { %> 
+                <h1>Unable to fetch posts.</h1>
+            <% } %> 
+        </div>
+    </body>
+</html>   
