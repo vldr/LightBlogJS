@@ -5,27 +5,38 @@
 <html> 
     <head>  
         <title><%= post ? post.title : "LightBlog" %></title>
+
         <link href="style.css" rel="stylesheet" media="screen">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>         
     <body>
+        <div class="header-nav header-nav-post">
+			<a href="/"><img class="logo-header" src="http://vldr.org/manager-old/Assets/img/ui/logo-big.png"></a>
+			<ul class="navbar">
+				<li><a href="http://vldr.org/index.html">Home</a></li>
+				<li><a href="http://vldr.org/manager/">Vault</a></li>
+				<li><a href="http://vldr.org/legal.html">Legal</a></li>
+			</ul>
+		</div>
+
         <div class="content">
             <% if (post) { %> 
                 <div class="postBox postBoxOnPage">
                     <% if (post.coverPhoto) { %> 
                         <div class="coverPhotoOnPage" style="background-image:url('<%= post.coverPhoto %>')"></div>
                     <% } %> 
-                    
+
                     <div class="viewContainer">
                         <div class="postHeader">
                             <h1 class="postTitleOnPage"><%= post.title %></h1>
-                            <span class="postDate"><%= post.date %></span>
+                            <span class="postDate"><%= post.date %> - <%= post.author %></span>
                         </div>
                         <div class="postContent">
                             <p><%- post.content %></p>
                         </div>
-                        <div class="postFooter">
-                            <span class="postAuthor"><%= post.author %></span>
-                        </div>
+                        <div class="postFooter"></div>
                     </div>
                 </div>
             <% } else { %> 

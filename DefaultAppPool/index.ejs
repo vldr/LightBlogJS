@@ -1,10 +1,22 @@
 <!DOCTYPE html>  
 <html>
     <head>  
-        <title>Lightblog</title>
+        <title>LightBlog</title>
         <link href="style.css" rel="stylesheet" media="screen">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>         
     <body>
+        <div class="header-nav">
+			<a href="/"><img class="logo-header" src="http://vldr.org/manager-old/Assets/img/ui/logo-big.png"></a>
+			<ul class="navbar">
+				<li><a href="http://vldr.org/index.html">Home</a></li>
+				<li><a href="http://vldr.org/manager/">Vault</a></li>
+				<li><a href="http://vldr.org/legal.html">Legal</a></li>
+			</ul>
+		</div>
+
         <% const posts = LightBlog.fetchHomepage(); %> 
         <% if (posts) { %> 
             <div class="content">
@@ -15,15 +27,13 @@
                         <% } %> 
 
                         <div class="postHeader">
-                            <a class="postTitle" href="view?<%= post.title.replace(" ", "-").toLowerCase() %>"><%= post.title %></a>
-                            <div class="postDate"><%= post.date %></div>
+                            <a class="postTitle" href="view?<%= post.id %>"><%= post.title %></a>
+                            <div class="postDate"><%= post.date %> - <%= post.author %></div>
                         </div>
                         <div class="postContent">
                             <p><%- post.content %></p>
                         </div>
-                        <div class="postFooter">
-                            <span class="postAuthor"><%= post.author %></span>
-                        </div>
+                        <div class="postFooter"></div>
                     </div>
                 <% } %>
             </div>

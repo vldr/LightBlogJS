@@ -53,6 +53,7 @@ LightBlog.initDb = function()
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             owner INTEGER NOT NULL,
             title TEXT UNIQUE,
+            display_title TEXT,
             content TEXT, 
             preview_content TEXT, 
             draft_content TEXT, 
@@ -99,9 +100,17 @@ LightBlog.fetchHomepage = function(page = 0)
     // Catch any exceptions.
     try 
     {
-        con.prepare(`SELECT 
-            users.display_name, posts.preview_content, posts.title, posts.post_date, posts.cover_photo, posts.owner
+        con.prepare(`
+            SELECT 
+            users.display_name, 
+            posts.preview_content, 
+            posts.title, 
+            posts.post_date, 
+            posts.cover_photo, 
+            posts.display_title, 
+            posts.owner
             FROM posts INNER JOIN users ON users.id=posts.owner
+            ORDER BY posts.id DESC
             LIMIT 10 OFFSET ?
         `);
         con.bind(page);
@@ -113,9 +122,10 @@ LightBlog.fetchHomepage = function(page = 0)
                 {
                     author: con.fetch(DB_STRING, 0),
                     content: con.fetch(DB_STRING, 1),
-                    title: con.fetch(DB_STRING, 2),
+                    id: con.fetch(DB_STRING, 2),
                     date: con.fetch(DB_STRING, 3),
-                    coverPhoto: con.fetch(DB_STRING, 4)
+                    coverPhoto: con.fetch(DB_STRING, 4), 
+                    title: con.fetch(DB_STRING, 5)
                 }
             );
         }
@@ -143,11 +153,7 @@ LightBlog.fetchHomepage = function(page = 0)
 LightBlog.fetchPost = function(id)
 {
     // Check if we we're given an invalid id.
-    if (id == null)
-        return null;
-
-    // Remove any dashes.
-    id = id.replace("-", " "); 
+    if (id == null) return null;
 
     // Remove any question marks. 
     id = id.replace("?", "");
@@ -158,8 +164,16 @@ LightBlog.fetchPost = function(id)
     // Catch any exceptions.
     try 
     {
-        con.prepare(`SELECT users.display_name, posts.content, posts.title, posts.post_date, posts.cover_photo, posts.owner 
-            FROM posts INNER JOIN users ON users.id=posts.owner WHERE LOWER(posts.title)=?
+        con.prepare(`
+            SELECT 
+            users.display_name, 
+            posts.content, 
+            posts.display_title, 
+            posts.post_date, 
+            posts.cover_photo, 
+            posts.owner 
+            FROM posts INNER JOIN users ON users.id=posts.owner 
+            WHERE posts.title=?
         `);
 
         con.bind(id);
@@ -169,7 +183,10 @@ LightBlog.fetchPost = function(id)
         // Check if we got any results.
         if (!con.queryRow())
         {
+            // Close our database.
             con.close();
+
+            // Return null since nothing arrived.
             return null;
         }
 
@@ -181,7 +198,7 @@ LightBlog.fetchPost = function(id)
             content: con.fetch(DB_STRING, 1),
             title: con.fetch(DB_STRING, 2),
             date: con.fetch(DB_STRING, 3),
-            coverPhoto: con.fetch(DB_STRING, 4)
+            coverPhoto: con.fetch(DB_STRING, 4),
         };
 
         //////////////////////////////////////
