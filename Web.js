@@ -27,11 +27,8 @@ Web.handleRequest = function(response, request)
     // Check if our route is an endpoint.
     if (route.endpoint) 
     {
-        // Call our endpoint callback.
-        route.endpoint(response, request);
-
-        // Return FINISH on their behalf.
-        return FINISH; 
+        // Call the endpoint callback.
+        return route.endpoint(response, request); 
     }
 
     //////////////////////////////////////////

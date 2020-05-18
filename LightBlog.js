@@ -1,5 +1,4 @@
 load("Web.js");
-load("Scrypt.js");
 load("Marked.js");
 
 //////////////////////////////////////////////
@@ -23,6 +22,10 @@ LightBlog.init = function()
     Web.init(); 
     Web.addRoute(["/", "/index"], "index.ejs");  
     Web.addRoute(["/view"], "view.ejs");  
+    Web.addRoute(["/admin/", "/admin/index"], "admin/index.ejs");  
+    Web.addRoute(["/admin/dashboard"], "admin/dashboard.ejs");  
+    
+    Web.addEndpoint("/admin/login", LightBlog.handleLogin);  
 }
 
 /**
@@ -100,20 +103,39 @@ LightBlog.fetchHomepage = function(page = 0)
     // Catch any exceptions.
     try 
     {
-        con.prepare(`
-            SELECT 
-            users.display_name, 
-            posts.preview_content, 
-            posts.title, 
-            posts.post_date, 
-            posts.cover_photo, 
-            posts.display_title, 
-            posts.owner
-            FROM posts INNER JOIN users ON users.id=posts.owner
-            ORDER BY posts.id DESC
-            LIMIT 10 OFFSET ?
-        `);
-        con.bind(page);
+        if (page == -1)
+        {
+            con.prepare(`
+                SELECT 
+                users.display_name, 
+                posts.preview_content, 
+                posts.title, 
+                posts.post_date, 
+                posts.cover_photo, 
+                posts.display_title, 
+                posts.owner
+                FROM posts INNER JOIN users ON users.id=posts.owner
+                ORDER BY posts.id DESC
+            `);
+        }
+        else
+        {
+            con.prepare(`
+                SELECT 
+                users.display_name, 
+                posts.preview_content, 
+                posts.title, 
+                posts.post_date, 
+                posts.cover_photo, 
+                posts.display_title, 
+                posts.owner
+                FROM posts INNER JOIN users ON users.id=posts.owner
+                ORDER BY posts.id DESC
+                LIMIT 10 OFFSET ?
+            `);
+            con.bind(page);
+        }
+        
         con.query();
 
         while (con.next()) 
@@ -220,4 +242,51 @@ LightBlog.fetchPost = function(id)
 
     // Return a null object indicating an error.
     return null
+}
+
+LightBlog.handleLogin = async function(response, request)
+{
+    let arr = new Uint8Array([84,104,105,115,32,105,115,32,97,32,85,105,110,116,
+        56,65,114,114,97,121,32,99,111,110,118,101,114,116,
+        101,100,32,116,111,32,97,32,115,116,114,105,110,103]);
+    
+    const N = 1024, r = 8, p = 1;
+          const dkLen = 32;
+    
+          //const key = scrypt.syncScrypt(arr, arr, N, r, p, dkLen);
+          //print("Derived Key (sync): ", key);
+    
+    const keyPromise = await scrypt.scrypt(arr, arr, N, r, p, dkLen, (s) => print(s)).then((key) => {
+        print("we done");
+    }).catch((e) => {
+        print("error", e)
+    }); 
+
+
+    // Setup a result object.
+    const result = {};
+
+    // Check if this is a POST request.
+    if (request.getMethod() !== "POST")
+    {
+        result.success = false;
+        result.reason = "invalid http method.";
+
+        response.write(
+            JSON.stringify(result)
+        );
+
+        return FINISH;
+    }
+
+    /////////////////////////////////////////
+
+    
+    /////////////////////////////////////////
+
+    response.write(
+        JSON.stringify(result)
+    );
+
+    return FINISH;
 }

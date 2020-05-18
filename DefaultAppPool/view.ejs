@@ -24,17 +24,21 @@
         <div class="content">
             <% if (post) { %> 
                 <div class="postBox postBoxOnPage">
-                    <div class="coverPhotoOnPage" 
-                        style=<%= post.coverPhoto ? `background-image:url(${post.coverPhoto})` 
-                        : `background:#dedede;height:170px;` %>>
-                    </div>
+                    <% if (post.coverPhoto) { %> 
+                        <div class="coverPhotoOnPage" 
+                            style="background-image:url('<%= post.coverPhoto %>')">
+                        </div>
+                    <% } else { %>
+                        <div class="coverlessPhotoOnPage"></div>
+                    <% } %> 
+                    
                     <div class="viewContainer">
                         <div class="postHeader">
                             <h1 class="postTitleOnPage"><%= post.title %></h1>
                             <span class="postDate"><%= post.date %> - <%= post.author %></span>
                         </div>
                         <div class="postContent">
-                            <p><%- post.content %></p>
+                            <p><%- marked(post.content) %></p>
                         </div>
                         <div class="postFooter"></div>
                     </div>
