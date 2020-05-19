@@ -247,47 +247,84 @@ LightBlog.fetchPost = function(id)
 
 LightBlog.handleLogin = async function(response, request)
 {
-    let arr = new Uint8Array([84,104,105,115,32,105,115,32,97,32,85,105,110,116,
-        56,65,114,114,97,121,32,99,111,110,118,101,114,116,
-        101,100,32,116,111,32,97,32,115,116,114,105,110,103]);
-    
-    const N = 1024, r = 8, p = 1;
-          const dkLen = 32;
-    
-          //const key = scrypt.syncScrypt(arr, arr, N, r, p, dkLen);
-          //print("Derived Key (sync): ", key);
-    
-    const keyPromise = await scrypt.scrypt(arr, arr, N, r, p, dkLen, (s) => print(s)).then((key) => {
-        print("we done");
-    }).catch((e) => {
-        print("error", e)
-    }); 
-
-
     // Setup a result object.
-    const result = {};
+    let result = {};
+    
+    // Setup a empty connection variable.
+    let con = null;
 
-    // Check if this is a POST request.
-    if (request.getMethod() !== "POST")
+    try 
     {
-        result.success = false;
-        result.reason = "invalid http method.";
+        // Check if this is a POST request.
+        if (request.getMethod() !== "POST")
+            throw "invalid http method."
 
-        response.write(
-            JSON.stringify(result)
+        ////////////////////////////////////
+
+        // Parse our provided data.
+        const info = JSON.parse(
+            request.read()
         );
 
-        return FINISH;
+        // Check if a username and password was provided.
+        if (!info.username || !info.password) 
+            throw "no username or password provided.";
+
+        ////////////////////////////////////
+
+        // Initialize our connection.
+        con = db.init(LightBlog.DB_CONNECTION_STRING);
+
+        // Prepare to select our user with the matching username.
+        con.prepare(`SELECT password, id, display_name FROM users WHERE username=? LIMIT 1`);
+
+        // Bind our username.
+        con.bind(info.username);
+
+        // Query our single row.
+        const isNonEmpty = con.queryRow();
+
+        // Check if any user exists.
+        if (!isNonEmpty) 
+            throw "no matching user was found.";
+
+        ////////////////////////////////////
+
+        // Fetch our hashed password.
+        const hashedPassword = con.fetch(DB_STRING, 0);
+
+        ////////////////////////////////////
+
+        if (!await crypto.bcrypt.check(info.password, hashedPassword))
+            throw "invalid password provided."
+
+        // Set a successful result.
+        result = { success: true };
     }
+    catch (e)
+    {
+        // Log our error.
+        print(`${LightBlog.LOG_TAG} Exception at handleLogin (${e})`);
 
-    /////////////////////////////////////////
+        // Close our connection if it's open.
+        if (con) 
+           con.close();
 
+        // Set our result.
+        result = {
+           success: false, 
+           reason: "failed to authenticate"
+        };
+    }
     
     /////////////////////////////////////////
 
     response.write(
-        JSON.stringify(result)
+        JSON.stringify(result),
+        "application/json"
     );
+
+    /////////////////////////////////////////
 
     return FINISH;
 }
