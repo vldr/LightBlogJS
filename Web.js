@@ -131,6 +131,10 @@ Web.directoryUpdate = function()
     for (const path in Web.routeTable) 
     {
         const route = Web.routeTable[path];
+
+        // Skip endpoints.
+        if (route.endpoint) continue;
+
         const str = fs.read(route.fileName);
         const template = ejs.compile(str);
 

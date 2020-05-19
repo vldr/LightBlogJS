@@ -1,8 +1,8 @@
 <% const title = request.getQueryString(); %> 
-<% const post = LightBlog.fetchPost(title); %> 
+<% const post = LightBlog.getPost(title); %> 
 
 <!DOCTYPE html>  
-<html> 
+<html>  
     <head>  
         <title><%= post ? post.title : "LightBlog" %></title>
 
@@ -10,11 +10,11 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>         
+    </head>          
     <body>
         <div class="header-nav header-nav-post">
 			<a href="/"><img class="logo-header" src="https://vldr.org/manager/images/ui/logo-big.png"></a>
-			<ul class="navbar">
+			<ul class="navbar"> 
 				<li><a href="http://vldr.org/index.html">Home</a></li>
 				<li><a href="http://vldr.org/manager/">Vault</a></li>
 				<li><a href="http://vldr.org/legal.html">Legal</a></li>

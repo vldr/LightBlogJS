@@ -17,7 +17,7 @@ LightBlog.LOG_TAG = "[LIGHTBLOG]";
  * Initializes the lightblog database and web framework.
  */
 LightBlog.init = function()
-{
+{ 
     LightBlog.initDb();
 
     Web.init(); 
@@ -91,19 +91,25 @@ LightBlog.initDb = function()
 }
 
 /**
- * Returns an object containg the homepage depending on the page.
+ * Returns a list of posts 
+ * @param page The page number of which posts lie in.
+ * @returns Post object.
  */
-LightBlog.fetchHomepage = function(page = 0)
+LightBlog.getPosts = function(page = 0)
 {
     // The object that will be returned.
     let posts = [];
  
-    // Initialize a db object.
-    let con = db.init(LightBlog.DB_CONNECTION_STRING);
+    // Initialize a db object. 
+    let con = null;
 
     // Catch any exceptions.
     try 
     {
+        // Get the db object.
+        con = db.init(LightBlog.DB_CONNECTION_STRING);
+
+        // Check if we want to get all the posts.
         if (page == -1)
         {
             con.prepare(`
@@ -119,8 +125,10 @@ LightBlog.fetchHomepage = function(page = 0)
                 ORDER BY posts.id DESC
             `);
         }
+        // Otherwise, fetch the first 10 posts by the offset.
         else
         {
+            // Prepare our statement.
             con.prepare(`
                 SELECT 
                 users.display_name, 
@@ -134,13 +142,21 @@ LightBlog.fetchHomepage = function(page = 0)
                 ORDER BY posts.id DESC
                 LIMIT 10 OFFSET ?
             `);
-            con.bind(page);
+
+            // Calculate the offset.
+            const offset = (parseInt(page, 10) || 0) * 10;
+
+            // Bind our offset number.
+            con.bind(offset);
         }
         
+        // Query our statement.
         con.query();
 
+        // Loop throughout all the results.
         while (con.next()) 
         {
+            // Push our post to the list.
             posts.push(
                 {
                     author: con.fetch(DB_STRING, 0),
@@ -162,8 +178,9 @@ LightBlog.fetchHomepage = function(page = 0)
         // Log that we've hit an exception.
         print(`${LightBlog.LOG_TAG} Failed fetch homepage (${page}, ${e}).`);
 
-        // Close our database connection.
-        con.close();
+        // Close our database connection if it isn't null.
+        if (con)
+            con.close();
 
         // Return a null object indicating an error.
         return null;
@@ -173,7 +190,12 @@ LightBlog.fetchHomepage = function(page = 0)
     return posts;
 }
 
-LightBlog.fetchPost = function(id)
+/**
+ * Fetchs a given post.
+ * @param id The title of the post. (not display title)
+ * @returns A post object, or **null** if it doesn't exist.
+ */
+LightBlog.getPost = function(id)
 {
     // Check if we we're given an invalid id.
     if (id == null) return null;
@@ -181,12 +203,16 @@ LightBlog.fetchPost = function(id)
     // Remove any question marks. 
     id = id.replace("?", "");
 
-    // Initialize a db object.
-    let con = db.init(LightBlog.DB_CONNECTION_STRING);
+    // Setup a null connection object.
+    let con = null;
 
     // Catch any exceptions.
     try 
     {
+        // Initialize our connection.
+        con = db.init(LightBlog.DB_CONNECTION_STRING);
+
+        // Prepare our statement.
         con.prepare(`
             SELECT 
             users.display_name, 
@@ -199,22 +225,18 @@ LightBlog.fetchPost = function(id)
             WHERE posts.title=?
         `);
 
+        // Bind our id.
         con.bind(id);
 
         //////////////////////////////////////
 
         // Check if we got any results.
         if (!con.queryRow())
-        {
-            // Close our database.
-            con.close();
-
-            // Return null since nothing arrived.
-            return null;
-        }
+            throw "no post was found";
 
         //////////////////////////////////////
 
+        // Setup a post object.
         const post = 
         {
             author: con.fetch(DB_STRING, 0),
@@ -226,6 +248,7 @@ LightBlog.fetchPost = function(id)
 
         //////////////////////////////////////
 
+        // Close our connection.
         con.close();
 
         //////////////////////////////////////
@@ -238,13 +261,17 @@ LightBlog.fetchPost = function(id)
         print(`${LightBlog.LOG_TAG} Failed fetch post (${id}, ${e}). `);
 
         // Close our database connection.
-        con.close();
+        if (con)
+            con.close();
     }
 
     // Return a null object indicating an error.
     return null
 }
 
+/**
+ * Handles a login to the admin panel.
+ */
 LightBlog.handleLogin = async function(response, request)
 {
     // Setup a result object.

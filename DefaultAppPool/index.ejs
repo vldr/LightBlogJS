@@ -6,7 +6,7 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>         
+    </head>          
     <body>
         <div class="header-nav">
 			<a href="/"><img class="logo-header" src="https://vldr.org/manager/images/ui/logo-big.png"></a>
@@ -17,7 +17,7 @@
 			</ul>
 		</div>
 
-        <% const posts = LightBlog.fetchHomepage(); %> 
+        <% const posts = LightBlog.getPosts(); %> 
         <% if (posts) { %> 
             <div class="content">
                 <% for (const post of posts) {%>
