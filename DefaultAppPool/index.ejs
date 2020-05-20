@@ -17,7 +17,7 @@
 			</ul>
 		</div>
 
-        <% const posts = LightBlog.getPosts(); %> 
+        <% const posts = LightBlog.getPosts(request.getQueryString() || "0"); %> 
         <% if (posts) { %> 
             <div class="content">
                 <% for (const post of posts) {%>

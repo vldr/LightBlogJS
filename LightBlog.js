@@ -13,6 +13,24 @@ LightBlog.DB_CONNECTION_STRING = "sqlite3:db=C:\\Users\\Public\\db.db";
 // The prefixed tag used on logs.
 LightBlog.LOG_TAG = "[LIGHTBLOG]";
 
+// The name of the session cookie.
+LightBlog.SESSION_NAME = "lightblog.session";
+
+// The length of the session identifier.
+LightBlog.SESSION_IDENTIFIER_LENGTH = 33;
+
+// The amount of time(ms) a session stays valid for.
+LightBlog.SESSION_EXPIRY = 1500000;
+
+// Path to the dashboard.
+LightBlog.DASHBOARD_PATH = "/admin/dashboard";
+
+// The path to index.
+LightBlog.INDEX_PATH = "/admin/";
+
+// The array containg all the session.
+LightBlog.sessionTable = {};
+
 /**
  * Initializes the lightblog database and web framework.
  */
@@ -27,6 +45,7 @@ LightBlog.init = function()
     Web.addRoute(["/admin/dashboard"], "admin/dashboard.ejs");  
     
     Web.addEndpoint("/admin/login", LightBlog.handleLogin);  
+    Web.addEndpoint("/admin/logout", LightBlog.handleLogout);  
 }
 
 /**
@@ -95,8 +114,11 @@ LightBlog.initDb = function()
  * @param page The page number of which posts lie in.
  * @returns Post object.
  */
-LightBlog.getPosts = function(page = 0)
+LightBlog.getPosts = function(page = "0")
 {
+    // Remove any question marks. 
+    page = page.replace("?", "");
+
     // The object that will be returned.
     let posts = [];
  
@@ -110,7 +132,7 @@ LightBlog.getPosts = function(page = 0)
         con = db.init(LightBlog.DB_CONNECTION_STRING);
 
         // Check if we want to get all the posts.
-        if (page == -1)
+        if (page == "-1")
         {
             con.prepare(`
                 SELECT 
@@ -269,6 +291,53 @@ LightBlog.getPost = function(id)
     return null
 }
 
+LightBlog.getSession = function(response, request) 
+{
+    // Get the raw cookie header.
+    const rawCookies = request.getHeader("Cookie");
+
+    // Return null if no cookies exist.
+    if (!rawCookies) return null;
+
+    try 
+    {
+        // Attempt to parse our cookies.
+        const cookies = Cookie.parse(rawCookies);
+
+        // Fetch the session cookie.
+        const sessionIdentifier = cookies[LightBlog.SESSION_NAME];
+
+        // Check if our session exists in the given cookie.
+        if (!sessionIdentifier)
+            return null;
+
+        // Return the session object.
+        return LightBlog.sessionTable[sessionIdentifier];
+    } 
+    catch (e)
+    {
+        // Log our error.
+        print(`${LightBlog.LOG_TAG} Exception at getSession (${e})`);
+
+        // Return null.
+        return null;
+    }
+}
+
+LightBlog.handleLogout = function(response, request)
+{
+    const session = LightBlog.getSession(response, request);
+
+    if (session)
+    {
+        delete LightBlog.sessionTable[session.tag];
+    }
+
+    response.redirect(LightBlog.INDEX_PATH, true, true);
+
+    return FINISH;
+}
+
 /**
  * Handles a login to the admin panel.
  */
@@ -325,8 +394,52 @@ LightBlog.handleLogin = async function(response, request)
         if (!await crypto.bcrypt.check(info.password, hashedPassword))
             throw "invalid password provided."
 
+        ////////////////////////////////////
+
+        const randomString = (length) => 
+        {
+            let result = "";
+            const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const charactersLength = characters.length;
+            for (let i = 0; i < length; i++)
+            {
+                result += characters.charAt(
+                    Math.floor(Math.random() * charactersLength)
+                );
+            }
+
+            return result;
+        };
+
+        // Generate the session identifier.
+        const sessionIdentifier = randomString(LightBlog.SESSION_IDENTIFIER_LENGTH);
+
+        // Throw if our session identifier is a duplicate.
+        if (sessionIdentifier in LightBlog.sessionTable)
+            throw "duplicate session identifier";
+
+        // Generate the cookie string.
+        const cookieString = Cookie.serialize(LightBlog.SESSION_NAME, sessionIdentifier, { });
+
+        // Add our session object to the session table.
+        LightBlog.sessionTable[sessionIdentifier] = 
+        {
+            created: new Date(),
+            tag: sessionIdentifier,
+            id: con.fetch(DB_STRING, 1),
+            name: con.fetch(DB_STRING, 2)
+        };
+
+        // Set the cookie.
+        response.setHeader("Set-Cookie", cookieString);
+
+        ////////////////////////////////////
+
         // Set a successful result.
         result = { success: true };
+
+        // Close our database connection.
+        con.close();
     }
     catch (e)
     {

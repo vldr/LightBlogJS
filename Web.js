@@ -51,7 +51,7 @@ Web.handleRequest = function(response, request)
 
 /**
  * Handles every routed request.
- */
+ */ 
 Web.handleRoute = function(response, request, routeTemplate)
 {
     // Setup a boolean that will determine whether we should cache the page.

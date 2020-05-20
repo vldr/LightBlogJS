@@ -1,3 +1,12 @@
+<% 
+const session = LightBlog.getSession(response, request);
+
+if (!session)
+{
+    response.redirect(LightBlog.INDEX_PATH, true, true);
+    return "";
+}
+%> 
 <!DOCTYPE html>  
 <html> 
     <head>  
@@ -14,16 +23,13 @@
         <div class="menu">
             <a href="index">Create New Post</a>
             <a href="index">Edit Profile</a>
-        </div>
+            <a href="logout">Logout</a>
+        </div> 
         <div class="posts"> 
-            <% const posts = LightBlog.fetchHomepage(-1); %> 
+            <% const posts = LightBlog.getPosts("-1"); %> 
             <% if (posts) { %> 
                 <% for (const post of posts) {%>
                     <div class="postBox">
-                        <% if (post.coverPhoto) { %> 
-                            <div class="coverPhoto" style="background-image:url('<%= post.coverPhoto %>')"></div>
-                        <% } %>
-
                         <div class="postHeader">
                             <a class="postTitle" href="edit?<%= post.id %>"><%= post.title %></a>
                             <div class="postDate"><%= post.date %> - <%= post.author %></div>
