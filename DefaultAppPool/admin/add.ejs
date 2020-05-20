@@ -1,0 +1,27 @@
+<% 
+const session = LightBlog.getSession(response, request);
+
+if (!session)
+{
+    response.redirect(LightBlog.INDEX_PATH, true, true);
+    return "";
+}
+%> 
+<!DOCTYPE html>  
+<html> 
+    <head>  
+        <title>Create New Post - LightBlog Administration</title>
+        <link href="/admin.css" rel="stylesheet" media="screen">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>         
+    <body> 
+        <div class="topbar">
+            <a href="index">Control Panel</a> / <a>Create New Post</a>
+        </div>
+        <div id="form"> 
+            
+        </div>
+    </body>
+</html>   
