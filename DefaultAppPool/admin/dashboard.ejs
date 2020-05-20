@@ -33,6 +33,7 @@ if (!session)
                 <% for (const post of posts) {%>
                     <div class="postBox">
                         <div class="postHeader">
+                            <% if (post.isHidden) { %><div class="postHidden" style=>Hidden</div> <% } %>
                             <a class="postTitle" href="edit?<%= post.id %>"><%= post.title %></a>
                             <div class="postDate"><%= post.date %> - <%= post.author %></div>
                         </div>

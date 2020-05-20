@@ -46,7 +46,7 @@ if (!session)
             <div class="form-group" style="padding-top: 22px;margin-top: 25px;border-top: 1px solid #c5c5c5;">
                 <div class="form-group-body">
                     <button type="submit" id="submit" disabled class="btn btn-primary" style="margin-right: 5px;">Create Post</button>
-                    <label>The post will be hidden upon creation.</label>
+                    <label id="side-info">The post will be hidden upon creation.</label>
                 </div>
             </div>
         </div>
@@ -110,31 +110,30 @@ if (!session)
                 document.getElementById("submit").disabled = true;
 
  
-                /*fetch("/admin/login", { 
+                fetch("/admin/new/post", { 
                     method: "POST",
                     body: JSON.stringify({
-                        "username": document.getElementById("username").value,
-                        "password": document.getElementById("password").value,
+                        "title": document.getElementById("title").value
                     })
                 }) 
                 .then(response => response.json())
                 .then((data) => 
                 {
+                    document.getElementById("submit").textContent = "Create Post";
+                    document.getElementById("title").disabled = false;
                     document.getElementById("submit").disabled = false;
 
                     if (data.success)
                     {
-                        document.getElementById("info").textContent = "Successfully logged in, redirecting.";
-
                         window.location.replace("<%= LightBlog.DASHBOARD_PATH %>");
                     }
                     else 
                     {
-                        document.getElementById("info").style = "color:red;";
-                        document.getElementById("info").textContent = "Invalid password or username provided.";
+                        document.getElementById("side-info").style = "color:red;";
+                        document.getElementById("side-info").textContent = "Failed to create new post.";
                     }
-                });*/
+                });
             }
         </script>
     </body>
-</html>   
+</html>    

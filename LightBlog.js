@@ -48,6 +48,7 @@ LightBlog.init = function()
     Web.addEndpoint("/admin/login", LightBlog.handleLogin);  
     Web.addEndpoint("/admin/logout", LightBlog.handleLogout);  
     Web.addEndpoint("/admin/check", LightBlog.handleCheckTitle);  
+    Web.addEndpoint("/admin/new/post", LightBlog.handleNewPost);  
 }
 
 /**
@@ -145,9 +146,9 @@ LightBlog.getPosts = function(page = "0")
                 posts.post_date, 
                 posts.cover_photo, 
                 posts.display_title, 
+                posts.is_hidden,
                 posts.owner
                 FROM posts INNER JOIN users ON users.id=posts.owner
-                WHERE posts.is_hidden=0
                 ORDER BY posts.id DESC
             `);
         }
@@ -163,6 +164,7 @@ LightBlog.getPosts = function(page = "0")
                 posts.post_date, 
                 posts.cover_photo, 
                 posts.display_title, 
+                posts.is_hidden,
                 posts.owner
                 FROM posts INNER JOIN users ON users.id=posts.owner
                 WHERE posts.is_hidden=0
@@ -191,7 +193,8 @@ LightBlog.getPosts = function(page = "0")
                     id: con.fetch(DB_STRING, 2),
                     date: con.fetch(DB_STRING, 3),
                     coverPhoto: con.fetch(DB_STRING, 4), 
-                    title: con.fetch(DB_STRING, 5)
+                    title: con.fetch(DB_STRING, 5),
+                    isHidden: con.fetch(DB_BOOL, 6)
                 }
             );
         }
@@ -247,6 +250,7 @@ LightBlog.getPost = function(id)
             posts.display_title, 
             posts.post_date, 
             posts.cover_photo, 
+            posts.is_hidden,
             posts.owner 
             FROM posts INNER JOIN users ON users.id=posts.owner 
             WHERE posts.title=? AND posts.is_hidden=0
@@ -271,6 +275,7 @@ LightBlog.getPost = function(id)
             title: con.fetch(DB_STRING, 2),
             date: con.fetch(DB_STRING, 3),
             coverPhoto: con.fetch(DB_STRING, 4),
+            isHidden: con.fetch(DB_BOOL, 5)
         };
 
         //////////////////////////////////////
@@ -543,6 +548,93 @@ LightBlog.handleCheckTitle = function(response, request)
         result = {
            success: false, 
            reason: "failed to check title"
+        };
+    }
+    
+    /////////////////////////////////////////
+
+    response.write(
+        JSON.stringify(result),
+        "application/json"
+    );
+
+    /////////////////////////////////////////
+
+    return FINISH;
+}
+
+LightBlog.handleNewPost = function(response, request)
+{
+    // Setup a result object.
+    let result = {};
+    
+    // Setup a empty connection variable.
+    let con = null;
+
+    try 
+    {   const session = LightBlog.getSession(response, request);
+
+        if (!session)
+            throw "not logged in."
+
+        //////////////////////////////////////
+
+        // Check if this is a POST request.
+        if (request.getMethod() !== "POST")
+            throw "invalid http method."
+
+        ////////////////////////////////////
+
+        // Parse our provided data.
+        const info = JSON.parse(
+            request.read()
+        );
+
+        // Check if a title was provided
+        if (!info.title || info.title.length === 0) 
+            throw "no title provided.";
+
+        // Transform our title.
+        const title = info.title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, '').replace(/\s/g, "-");
+        const displayTitle = info.title;
+
+        ////////////////////////////////////
+
+        // Initialize our connection.
+        con = db.init(LightBlog.DB_CONNECTION_STRING);
+
+        // Prepare to select our user with the matching username.
+        con.prepare(`INSERT INTO posts (owner, title, display_title) VALUES (?, ?, ?)`);
+
+        // Bind our values.
+        con.bind(session.id);
+        con.bind(title);
+        con.bind(displayTitle);
+
+        // Execute our query.
+        con.exec();
+
+        ////////////////////////////////////
+
+        // Set a successful result.
+        result = { success: true };
+
+        // Close our database connection.
+        con.close();
+    }
+    catch (e)
+    {
+        // Log our error.
+        print(`${LightBlog.LOG_TAG} Exception at handleNewPost (${e})`);
+
+        // Close our connection if it's open.
+        if (con) 
+           con.close();
+
+        // Set our result.
+        result = {
+           success: false, 
+           reason: "failed to create new post"
         };
     }
     
