@@ -30,7 +30,7 @@ LightBlog.INDEX_PATH = "/admin/";
 
 // The array containg all the session.
 LightBlog.sessionTable = {};
-
+ 
 /**
  * Initializes the lightblog database and web framework.
  */
@@ -41,7 +41,7 @@ LightBlog.init = function()
     Web.init(); 
     Web.addRoute(["/", "/index"], "index.ejs");  
     Web.addRoute(["/view"], "view.ejs");  
-    Web.addRoute(["/admin/", "/admin/index"], "admin/index.ejs");  
+    Web.addRoute(["/admin/", "/admin/index"], "admin/login.ejs");  
     Web.addRoute(["/admin/dashboard"], "admin/dashboard.ejs");  
     
     Web.addEndpoint("/admin/login", LightBlog.handleLogin);  
@@ -82,7 +82,8 @@ LightBlog.initDb = function()
             draft_content TEXT, 
             post_date TEXT,
             edit_date TEXT,
-            cover_photo TEXT
+            cover_photo TEXT,
+            is_hidden INTEGER DEFAULT 1
         )`);
         con.exec();
 
@@ -144,6 +145,7 @@ LightBlog.getPosts = function(page = "0")
                 posts.display_title, 
                 posts.owner
                 FROM posts INNER JOIN users ON users.id=posts.owner
+                WHERE posts.is_hidden=0
                 ORDER BY posts.id DESC
             `);
         }
@@ -161,6 +163,7 @@ LightBlog.getPosts = function(page = "0")
                 posts.display_title, 
                 posts.owner
                 FROM posts INNER JOIN users ON users.id=posts.owner
+                WHERE posts.is_hidden=0
                 ORDER BY posts.id DESC
                 LIMIT 10 OFFSET ?
             `);
@@ -244,7 +247,7 @@ LightBlog.getPost = function(id)
             posts.cover_photo, 
             posts.owner 
             FROM posts INNER JOIN users ON users.id=posts.owner 
-            WHERE posts.title=?
+            WHERE posts.title=? AND posts.is_hidden=0
         `);
 
         // Bind our id.

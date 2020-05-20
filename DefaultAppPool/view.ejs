@@ -1,9 +1,17 @@
-<% const post = LightBlog.getPost(request.getQueryString()); %> 
+<% 
+const post = LightBlog.getPost(request.getQueryString());
+
+if (!post) 
+{
+    response.redirect("/", true, true); 
+    return "";
+}
+%>
 
 <!DOCTYPE html>  
 <html>  
     <head>  
-        <title><%= post ? post.title : "LightBlog" %></title>
+        <title><%= post.title %></title>
 
         <link href="style.css" rel="stylesheet" media="screen">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
@@ -21,30 +29,26 @@
 		</div>
 
         <div class="content">
-            <% if (post) { %> 
-                <div class="postBox postBoxOnPage">
-                    <% if (post.coverPhoto) { %> 
-                        <div class="coverPhotoOnPage" 
-                            style="background-image:url('<%= post.coverPhoto %>')">
-                        </div>
-                    <% } else { %>
-                        <div class="coverlessPhotoOnPage"></div>
-                    <% } %> 
-                    
-                    <div class="viewContainer">
-                        <div class="postHeader">
-                            <h1 class="postTitleOnPage"><%= post.title %></h1>
-                            <span class="postDate"><%= post.date %> - <%= post.author %></span>
-                        </div>
-                        <div class="postContent">
-                            <p><%- marked(post.content) %></p>
-                        </div>
-                        <div class="postFooter"></div>
+            <div class="postBox postBoxOnPage">
+                <% if (post.coverPhoto) { %> 
+                    <div class="coverPhotoOnPage" 
+                        style="background-image:url('<%= post.coverPhoto %>')">
                     </div>
+                <% } else { %>
+                    <div class="coverlessPhotoOnPage"></div>
+                <% } %> 
+                
+                <div class="viewContainer">
+                    <div class="postHeader">
+                        <h1 class="postTitleOnPage"><%= post.title %></h1>
+                        <span class="postDate"><%= post.date %> - <%= post.author %></span>
+                    </div>
+                    <div class="postContent">
+                        <p><%- marked(post.content) %></p>
+                    </div>
+                    <div class="postFooter"></div>
                 </div>
-            <% } else { %> 
-                <h1>Unable to find this post.</h1>
-            <% } %> 
+            </div>
         </div>
     </body>
 </html>  

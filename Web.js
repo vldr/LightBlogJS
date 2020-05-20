@@ -56,7 +56,7 @@ Web.handleRoute = function(response, request, routeTemplate)
 {
     // Setup a boolean that will determine whether we should cache the page.
     response.cache = false;
-
+ 
     // Get our rendered page.
     const rendered = routeTemplate(
         {
