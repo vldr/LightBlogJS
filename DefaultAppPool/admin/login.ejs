@@ -1,0 +1,62 @@
+<% 
+    if (LightBlog.getSession(response, request))
+    {
+        response.redirect(LightBlog.DASHBOARD_PATH, true, true);
+        return "";
+    }
+%> 
+<!DOCTYPE html>  
+<html> 
+    <head>  
+        <title>LightBlog Login</title>
+        <link href="/admin.css" rel="stylesheet" media="screen">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>         
+    <body> 
+        <div> 
+            <form id="form">
+                <span id="info">Please login to access the dashboard.</span><br><br>
+                <input type="text" id="username" name="username" placeholder="Username"><br><br>
+                <input type="password" id="password" name="password" placeholder="Password"><br><br>
+                <input type="submit" id="submit" value="Submit">
+            </form> 
+        </div>
+        <script>
+            document.getElementById("form").onsubmit = function(event) 
+            {
+                event.preventDefault();
+
+                document.getElementById("submit").disabled = true;
+                document.getElementById("info").style = "";
+                document.getElementById("info").textContent = "Processing...";
+ 
+                fetch("/admin/login", { 
+                    method: "POST",
+                    body: JSON.stringify({
+                        "username": document.getElementById("username").value,
+                        "password": document.getElementById("password").value,
+                    })
+                }) 
+                .then(response => response.json())
+                .then((data) => 
+                {
+                    document.getElementById("submit").disabled = false;
+
+                    if (data.success)
+                    {
+                        document.getElementById("info").textContent = "Successfully logged in, redirecting.";
+
+                        window.location.replace("<%= LightBlog.DASHBOARD_PATH %>");
+                    }
+                    else 
+                    {
+                        document.getElementById("info").style = "color:red;";
+                        document.getElementById("info").textContent = "Invalid password or username provided.";
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>   
