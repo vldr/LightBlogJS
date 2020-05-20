@@ -43,9 +43,11 @@ LightBlog.init = function()
     Web.addRoute(["/view"], "view.ejs");  
     Web.addRoute(["/admin/", "/admin/index"], "admin/login.ejs");  
     Web.addRoute(["/admin/dashboard"], "admin/dashboard.ejs");  
+    Web.addRoute(["/admin/add"], "admin/add.ejs");  
     
     Web.addEndpoint("/admin/login", LightBlog.handleLogin);  
     Web.addEndpoint("/admin/logout", LightBlog.handleLogout);  
+    Web.addEndpoint("/admin/check", LightBlog.handleCheckTitle);  
 }
 
 /**
@@ -353,7 +355,13 @@ LightBlog.handleLogin = async function(response, request)
     let con = null;
 
     try 
-    {
+    {   const session = LightBlog.getSession(response, request);
+
+        if (session)
+            throw "already logged in."
+
+        //////////////////////////////////////
+
         // Check if this is a POST request.
         if (request.getMethod() !== "POST")
             throw "invalid http method."
@@ -457,6 +465,84 @@ LightBlog.handleLogin = async function(response, request)
         result = {
            success: false, 
            reason: "failed to authenticate"
+        };
+    }
+    
+    /////////////////////////////////////////
+
+    response.write(
+        JSON.stringify(result),
+        "application/json"
+    );
+
+    /////////////////////////////////////////
+
+    return FINISH;
+}
+
+LightBlog.handleCheckTitle = function(response, request)
+{
+    // Setup a result object.
+    let result = {};
+    
+    // Setup a empty connection variable.
+    let con = null;
+
+    try 
+    {   const session = LightBlog.getSession(response, request);
+
+        if (!session)
+            throw "not logged in."
+
+        //////////////////////////////////////
+
+        // Check if this is a POST request.
+        if (request.getMethod() !== "POST")
+            throw "invalid http method."
+
+        ////////////////////////////////////
+
+        // Parse our provided data.
+        const info = JSON.parse(
+            request.read()
+        );
+
+        // Check if a title was provided
+        if (!info.title || info.title.length === 0) 
+            throw "no title provided.";
+
+        ////////////////////////////////////
+
+        // Initialize our connection.
+        con = db.init(LightBlog.DB_CONNECTION_STRING);
+
+        // Prepare to select our user with the matching username.
+        con.prepare(`SELECT id FROM posts WHERE title=? LIMIT 1`);
+
+        // Bind our username.
+        con.bind(info.title);
+
+        ////////////////////////////////////
+
+        // Set a successful result.
+        result = { success: true, isTaken: con.queryRow() };
+
+        // Close our database connection.
+        con.close();
+    }
+    catch (e)
+    {
+        // Log our error.
+        print(`${LightBlog.LOG_TAG} Exception at handleCheckTitle (${e})`);
+
+        // Close our connection if it's open.
+        if (con) 
+           con.close();
+
+        // Set our result.
+        result = {
+           success: false, 
+           reason: "failed to check title"
         };
     }
     

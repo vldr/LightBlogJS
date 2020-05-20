@@ -9,6 +9,7 @@
 <html> 
     <head>  
         <title>LightBlog Login</title>
+        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
         <link href="/admin.css" rel="stylesheet" media="screen">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
@@ -18,9 +19,9 @@
         <div> 
             <form id="form">
                 <span id="info">Please login to access the dashboard.</span><br><br>
-                <input type="text" id="username" name="username" placeholder="Username"><br><br>
-                <input type="password" id="password" name="password" placeholder="Password"><br><br>
-                <input type="submit" id="submit" value="Submit">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Username"><br><br>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password"><br><br>
+                <input type="submit" class="btn btn-primary" id="submit" value="Login">
             </form> 
         </div>
         <script>

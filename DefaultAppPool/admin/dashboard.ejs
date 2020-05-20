@@ -10,7 +10,9 @@ if (!session)
 <!DOCTYPE html>  
 <html> 
     <head>  
-        <title>LightBlog Administration</title>
+        <title>Dashboard - LightBlog Administration</title>
+
+        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
         <link href="/admin.css" rel="stylesheet" media="screen">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
@@ -20,9 +22,9 @@ if (!session)
         <div class="topbar">
             <a href="index">Control Panel</a> / 
         </div>
-        <div class="menu">
-            <a href="index">Create New Post</a>
-            <a href="index">Edit Profile</a>
+        <div class="links">
+            <a href="add">Create New Post</a>
+            <a href="profile">Edit Profile</a>
             <a href="logout">Logout</a>
         </div> 
         <div class="posts"> 

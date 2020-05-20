@@ -11,6 +11,8 @@ if (!session)
 <html> 
     <head>  
         <title>Create New Post - LightBlog Administration</title>
+        
+        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
         <link href="/admin.css" rel="stylesheet" media="screen">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
@@ -20,8 +22,119 @@ if (!session)
         <div class="topbar">
             <a href="index">Control Panel</a> / <a>Create New Post</a>
         </div>
-        <div id="form"> 
+        <div id="form-ext"> 
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>ID</label>
+                </div>
+                <div class="form-group-body">
+                    <input class="form-control disabled" disabled type="text" id="preview" />
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>Title</label>
+                </div>
+                <div class="form-group-body">
+                    <input class="form-control" type="text" id="title" />
+                    <label id="info"></label>
+                </div>
+            </div>
             
+            <div class="form-group" style="padding-top: 22px;margin-top: 25px;border-top: 1px solid #c5c5c5;">
+                <div class="form-group-body">
+                    <button type="submit" id="submit" disabled class="btn btn-primary" style="margin-right: 5px;">Create Post</button>
+                    <label>The post will be hidden upon creation.</label>
+                </div>
+            </div>
         </div>
+        <script>
+            let inputTimeout;
+
+            document.getElementById("title").oninput = function(event) 
+            {
+                const preview = event.target.value.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, '').replace(/\s/g, "-");
+
+                document.getElementById("preview").value = preview;
+
+                document.getElementById("info").textContent = "Processing...";
+                document.getElementById("info").style = "";
+
+                if (inputTimeout)
+                    clearTimeout(inputTimeout);
+
+                inputTimeout = setTimeout(() => {
+                    fetch("/admin/check", { 
+                        method: "POST",
+                        body: JSON.stringify({
+                            "title": preview
+                        })
+                    }) 
+                    .then(response => response.json())
+                    .then((data) => 
+                    {
+                        if (data.success) 
+                        {
+                            if (data.isTaken)
+                            {
+                                document.getElementById("info").textContent = "This title is taken, choose another one!";
+                                document.getElementById("info").style = "color:red;";
+
+                                document.getElementById("submit").disabled = true;
+                            }
+                            else  
+                            {
+                                document.getElementById("info").textContent = "This title is available!";
+                                document.getElementById("info").style = "color:green;";
+
+                                document.getElementById("submit").disabled = false;
+                            }
+                        }
+                        else
+                        {
+                            document.getElementById("info").textContent = "Invalid title provided!";
+                            document.getElementById("info").style = "color:red;";
+
+                            document.getElementById("submit").disabled = true;
+                        }
+                    });
+                }, 500);
+            }
+
+            document.getElementById("submit").onclick = function(event) 
+            {
+                document.getElementById("submit").textContent = "Creating post...";
+                document.getElementById("title").disabled = true;
+                document.getElementById("submit").disabled = true;
+
+ 
+                /*fetch("/admin/login", { 
+                    method: "POST",
+                    body: JSON.stringify({
+                        "username": document.getElementById("username").value,
+                        "password": document.getElementById("password").value,
+                    })
+                }) 
+                .then(response => response.json())
+                .then((data) => 
+                {
+                    document.getElementById("submit").disabled = false;
+
+                    if (data.success)
+                    {
+                        document.getElementById("info").textContent = "Successfully logged in, redirecting.";
+
+                        window.location.replace("<%= LightBlog.DASHBOARD_PATH %>");
+                    }
+                    else 
+                    {
+                        document.getElementById("info").style = "color:red;";
+                        document.getElementById("info").textContent = "Invalid password or username provided.";
+                    }
+                });*/
+            }
+        </script>
     </body>
 </html>   
