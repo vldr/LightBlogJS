@@ -3,14 +3,14 @@ const session = LightBlog.getSession(response, request);
 
 if (!session)
 {
-    response.redirect(LightBlog.INDEX_PATH, true, true);
+    response.redirect(LightBlog.INDEX_PATH, true, false);
     return "";
 }
 %> 
 <!DOCTYPE html>  
 <html> 
     <head>  
-        <title>Create New Post - LightBlog Administration</title>
+        <title>New Post - LightBlog</title>
         
         <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
         <link href="/admin.css" rel="stylesheet" media="screen">
@@ -18,7 +18,8 @@ if (!session)
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>         
-    <body> 
+    <body>
+
         <div class="topbar">
             <a href="index">Control Panel</a> / <a>Create New Post</a>
         </div>
@@ -61,6 +62,8 @@ if (!session)
 
                 document.getElementById("info").textContent = "Processing...";
                 document.getElementById("info").style = "";
+                
+                document.getElementById("submit").disabled = true;
 
                 if (inputTimeout)
                     clearTimeout(inputTimeout);
@@ -81,8 +84,6 @@ if (!session)
                             {
                                 document.getElementById("info").textContent = "This title is taken, choose another one!";
                                 document.getElementById("info").style = "color:red;";
-
-                                document.getElementById("submit").disabled = true;
                             }
                             else  
                             {
@@ -96,8 +97,6 @@ if (!session)
                         {
                             document.getElementById("info").textContent = "Invalid title provided!";
                             document.getElementById("info").style = "color:red;";
-
-                            document.getElementById("submit").disabled = true;
                         }
                     });
                 }, 500);

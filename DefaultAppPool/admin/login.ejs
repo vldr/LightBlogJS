@@ -1,14 +1,14 @@
 <% 
     if (LightBlog.getSession(response, request))
     {
-        response.redirect(LightBlog.DASHBOARD_PATH, true, true);
+        response.redirect(LightBlog.DASHBOARD_PATH, true, false);
         return "";
     }
 %> 
 <!DOCTYPE html>  
 <html> 
     <head>  
-        <title>LightBlog Login</title>
+        <title>Login - LightBlog</title>
         <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
         <link href="/admin.css" rel="stylesheet" media="screen">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">

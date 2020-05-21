@@ -44,6 +44,7 @@ LightBlog.init = function()
     Web.addRoute(["/admin/", "/admin/index"], "admin/login.ejs");  
     Web.addRoute(["/admin/dashboard"], "admin/dashboard.ejs");  
     Web.addRoute(["/admin/add"], "admin/add.ejs");  
+    Web.addRoute(["/admin/edit"], "admin/edit.ejs");   
     
     Web.addEndpoint("/admin/login", LightBlog.handleLogin);  
     Web.addEndpoint("/admin/logout", LightBlog.handleLogout);  
@@ -225,7 +226,7 @@ LightBlog.getPosts = function(page = "0")
  * @param id The title of the post. (not display title)
  * @returns A post object, or **null** if it doesn't exist.
  */
-LightBlog.getPost = function(id)
+LightBlog.getPost = function(id, showHidden = false)
 {
     // Check if we we're given an invalid id.
     if (id == null) return null;
@@ -243,7 +244,7 @@ LightBlog.getPost = function(id)
         con = db.init(LightBlog.DB_CONNECTION_STRING);
 
         // Prepare our statement.
-        con.prepare(`
+        con.prepare(showHidden ? `
             SELECT 
             users.display_name, 
             posts.content, 
@@ -251,6 +252,22 @@ LightBlog.getPost = function(id)
             posts.post_date, 
             posts.cover_photo, 
             posts.is_hidden,
+            posts.title,
+            posts.preview_content,
+            posts.draft_content,
+            posts.edit_date,
+            posts.owner 
+            FROM posts INNER JOIN users ON users.id=posts.owner 
+            WHERE posts.title=?
+        `
+        :
+        `
+            SELECT 
+            users.display_name, 
+            posts.content, 
+            posts.display_title, 
+            posts.post_date, 
+            posts.cover_photo,
             posts.owner 
             FROM posts INNER JOIN users ON users.id=posts.owner 
             WHERE posts.title=? AND posts.is_hidden=0
@@ -268,14 +285,26 @@ LightBlog.getPost = function(id)
         //////////////////////////////////////
 
         // Setup a post object.
-        const post = 
+        const post = showHidden ? 
         {
             author: con.fetch(DB_STRING, 0),
             content: con.fetch(DB_STRING, 1),
             title: con.fetch(DB_STRING, 2),
             date: con.fetch(DB_STRING, 3),
             coverPhoto: con.fetch(DB_STRING, 4),
-            isHidden: con.fetch(DB_BOOL, 5)
+            isHidden: con.fetch(DB_BOOL, 5),
+            id: con.fetch(DB_STRING, 6),
+            previewContent: con.fetch(DB_STRING, 7),
+            draftContent: con.fetch(DB_STRING, 8),
+            editDate: con.fetch(DB_STRING, 9)
+        } 
+        :
+        {
+            author: con.fetch(DB_STRING, 0),
+            content: con.fetch(DB_STRING, 1),
+            title: con.fetch(DB_STRING, 2),
+            date: con.fetch(DB_STRING, 3),
+            coverPhoto: con.fetch(DB_STRING, 4)
         };
 
         //////////////////////////////////////

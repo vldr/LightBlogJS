@@ -3,14 +3,14 @@ const session = LightBlog.getSession(response, request);
 
 if (!session)
 {
-    response.redirect(LightBlog.INDEX_PATH, true, true);
+    response.redirect(LightBlog.INDEX_PATH, true, false);
     return "";
 }
 %> 
 <!DOCTYPE html>  
 <html> 
     <head>  
-        <title>Dashboard - LightBlog Administration</title>
+        <title>Dashboard - LightBlog</title>
 
         <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
         <link href="/admin.css" rel="stylesheet" media="screen">

@@ -3,45 +3,148 @@ const session = LightBlog.getSession(response, request);
 
 if (!session)
 {
-    response.redirect(LightBlog.INDEX_PATH, true, true);
+    response.redirect(LightBlog.INDEX_PATH, true, false);
     return "";
 }
+
+////////////////////////////////////////////////
+
+const post = LightBlog.getPost(request.getQueryString(), true);
+
+if (!post) 
+{
+    response.redirect(LightBlog.DASHBOARD_PATH, true, false); 
+    return "";
+}
+
 %> 
 <!DOCTYPE html>  
 <html> 
     <head>  
-        <title>LightBlog Administration</title>
+        <title><%= post.title %> - LightBlog</title>
+
+        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
         <link href="/admin.css" rel="stylesheet" media="screen">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>         
     <body> 
         <div class="topbar">
-            <a href="index">Control Panel</a> / 
+            <a href="index">Control Panel</a> / <a><%= post.title %></a>
         </div>
-        <div class="menu">
-            <a href="index">Create New Post</a>
-            <a href="index">Edit Profile</a>
-        </div>
-        <div class="posts"> 
-            <% const posts = LightBlog.fetchHomepage(-1); %> 
-            <% if (posts) { %> 
-                <% for (const post of posts) {%>
-                    <div class="postBox">
-                        <% if (post.coverPhoto) { %> 
-                            <div class="coverPhoto" style="background-image:url('<%= post.coverPhoto %>')"></div>
-                        <% } %>
+        <div id="form-ext">  
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>ID</label> 
+                </div>
+                <div class="form-group-body">
+                    <input class="form-control disabled" disabled type="text" value="<%= post.id %>" />
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>Creation Date</label> 
+                </div>
+                <div class="form-group-body">
+                    <input class="form-control disabled" disabled type="text" value="<%= post.date %>" />
+                </div>
+            </div>
 
-                        <div class="postHeader">
-                            <a class="postTitle" href="edit?<%= post.id %>"><%= post.title %></a>
-                            <div class="postDate"><%= post.date %> - <%= post.author %></div>
-                        </div>
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>Last Edit Date</label> 
+                </div>
+                <div class="form-group-body">
+                    <input class="form-control disabled" disabled type="text" value="<%= post.editDate %>" />
+                </div>
+            </div>
+
+            <!--------------------------------------------------------->
+
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>Title</label>
+                </div>
+                <div class="form-group-body">
+                    <input class="form-control" type="text" value="<%= post.title %>" id="title" />
+                    <label id="info"></label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>Cover Photo (url)</label>
+                </div>
+                <div class="form-group-body">
+                    <input class="form-control" type="text" value="<%= post.coverPhoto %>" id="coverPhoto" />
+                    <label id="info"></label>
+                </div>
+
+                <div style="background-image:url('<%= post.coverPhoto %>')" class="form-image-preview"></div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>Preview Content</label>
+                </div>
+                <div class="form-group-body">
+                    <textarea rows="8" cols="90" id="previewContent"><%= post.previewContent %></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-group-header">
+                    <label>Content</label>
+                </div>
+                <div class="form-group-body">
+                    <textarea rows="8" cols="90" id="content"><%= post.content %></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-group-body">
+                    <div class="form-checkbox">
+                        <label>
+                            <input type="checkbox" checked="checked" />
+                            Hidden
+                        </label>
+                        <p class="note">
+                            Enabling this will <strong>hide</strong> the post from the public!
+                        </p>
                     </div>
-                <% } %>
-            <% } else { %> 
-                <h1>Unable to fetch posts.</h1>
-            <% } %> 
+                </div>
+            </div> 
+            
+            <div class="form-group" style="padding-top: 22px;margin-top: 25px;border-top: 1px solid #c5c5c5;">
+                <div class="form-group-body">
+                    <details>
+                        <summary class="btn btn-danger">Delete</summary>
+                        <div class="border p-3 mt-2">
+                            <label>Enter the title of the post to delete.</label><br><br>
+                            <input class="form-control" type="text" id="delete-title" /><br><br>
+                            <button type="button" id="submit" class="btn btn-danger" >Delete</button>
+                        </div>
+                    </details>
+                </div>
+            </div>
+            
+            <div class="form-group" style="padding-top: 22px;margin-top: 25px;border-top: 1px solid #c5c5c5;">
+                <div class="form-group-body">
+                    <button type="submit" id="submit" class="btn btn-primary" style="margin-right: 5px;">Save Changes</button>
+                    <button type="button" id="submit" class="btn" style="margin-right: 5px;">Discard Draft</button>
+                    
+                    <label id="side-info"></label>
+                </div>
+            </div>
         </div>
+    
+        <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+        <script>
+            var previewContent = new SimpleMDE({ element: document.getElementById("previewContent") });
+            var content = new SimpleMDE({ element: document.getElementById("content") });
+        </script>
     </body>
 </html>   
