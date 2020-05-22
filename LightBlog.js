@@ -50,6 +50,7 @@ LightBlog.init = function()
     Web.addEndpoint("/admin/logout", LightBlog.handleLogout);  
     Web.addEndpoint("/admin/check", LightBlog.handleCheckTitle);  
     Web.addEndpoint("/admin/new/post", LightBlog.handleNewPost);  
+    Web.addEndpoint("/admin/update/post", LightBlog.handleUpdatePostContent);  
 }
 
 /**
@@ -665,6 +666,108 @@ LightBlog.handleNewPost = function(response, request)
            success: false, 
            reason: "failed to create new post"
         };
+    }
+    
+    /////////////////////////////////////////
+
+    response.write(
+        JSON.stringify(result),
+        "application/json"
+    );
+
+    /////////////////////////////////////////
+
+    return FINISH;
+}
+
+LightBlog.handleUpdatePostContent = function(response, request)
+{
+    // Setup a result object.
+    let result = {};
+    
+    // Setup a empty connection variable.
+    let con = null;
+
+    try 
+    {   const session = LightBlog.getSession(response, request);
+
+        if (!session)
+            throw "not logged in."
+
+        //////////////////////////////////////
+
+        // Check if this is a POST request.
+        if (request.getMethod() !== "POST")
+            throw "invalid http method."
+
+        ////////////////////////////////////
+
+        // Parse our provided data.
+        const info = JSON.parse(
+            request.read()
+        );
+
+        // Check if post id was provided.
+        if (!info.id)
+            throw "no id provided."
+
+        ////////////////////////////////////
+
+        // Initialize our connection.
+        con = db.init(LightBlog.DB_CONNECTION_STRING);
+ 
+        if (info.content && info.content.length > 0) 
+        {
+            con.prepare(`UPDATE posts SET content = ? WHERE title = ?`);
+
+            con.bind(info.content);
+            con.bind(info.id);
+
+            con.exec();
+            con.reset();
+        }
+        
+        if (info.previewContent && info.previewContent.length > 0) 
+        {
+            con.prepare(`UPDATE posts SET preview_content = ? WHERE title = ?`);
+
+            con.bind(info.previewContent);
+            con.bind(info.id);
+
+            con.exec();
+            con.reset();
+        }
+
+        if (info.title && info.title.length > 0) 
+        {
+            con.prepare(`UPDATE posts SET title = ? WHERE title = ?`);
+
+            con.bind(info.title);
+            con.bind(info.id);
+
+            con.exec();
+            con.reset();
+        }
+
+        ////////////////////////////////////
+
+        // Set a successful result.
+        result = { success: true };
+
+        // Close our database connection.
+        con.close();
+    }
+    catch (e)
+    {
+        // Log our error.
+        print(`${LightBlog.LOG_TAG} Exception at handleUpdatePostContent (${e})`);
+
+        // Close our connection if it's open.
+        if (con) 
+           con.close();
+
+        // Set our result.
+        result.success = false;
     }
     
     /////////////////////////////////////////

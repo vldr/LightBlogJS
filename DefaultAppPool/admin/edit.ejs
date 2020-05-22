@@ -40,7 +40,7 @@ if (!post)
                     <label>ID</label> 
                 </div>
                 <div class="form-group-body">
-                    <input class="form-control disabled" disabled type="text" value="<%= post.id %>" />
+                    <input class="form-control disabled" id="post-id" disabled type="text" value="<%= post.id %>" />
                 </div>
             </div>
             
@@ -58,7 +58,7 @@ if (!post)
                     <label>Last Edit Date</label> 
                 </div>
                 <div class="form-group-body">
-                    <input class="form-control disabled" disabled type="text" value="<%= post.editDate %>" />
+                    <input class="form-control disabled" disabled id="last-edit-date" type="text" value="<%= post.editDate %>" />
                 </div>
             </div>
 
@@ -67,37 +67,39 @@ if (!post)
             <div class="form-group">
                 <div class="form-group-header">
                     <label>Title</label>
+                    <span class="info-span" id="info-title"></span>
                 </div>
                 <div class="form-group-body">
                     <input class="form-control" type="text" value="<%= post.title %>" id="title" />
-                    <label id="info"></label>
                 </div>
             </div>
 
             <div class="form-group">
                 <div class="form-group-header">
                     <label>Cover Photo (url)</label>
+                    <span class="info-span" id="info-cover-photo"></span>
                 </div>
                 <div class="form-group-body">
-                    <input class="form-control" type="text" value="<%= post.coverPhoto %>" id="coverPhoto" />
-                    <label id="info"></label>
+                    <input class="form-control" type="text" value="<%= post.coverPhoto %>" id="cover-photo" />
                 </div>
 
-                <div style="background-image:url('<%= post.coverPhoto %>')" class="form-image-preview"></div>
+                <div style="background-image:url('<%= post.coverPhoto %>')" id="cover-photo-preview" class="form-image-preview"></div>
             </div>
 
             <div class="form-group">
                 <div class="form-group-header">
-                    <label>Preview Content</label>
+                    <label>Preview Content (autosaves)</label>
+                    <span class="info-span" id="info-preview-content"></span>
                 </div>
                 <div class="form-group-body">
-                    <textarea rows="8" cols="90" id="previewContent"><%= post.previewContent %></textarea>
+                    <textarea rows="8" cols="90" id="preview-content"><%= post.previewContent %></textarea>
                 </div>
             </div>
 
             <div class="form-group">
                 <div class="form-group-header">
-                    <label>Content</label>
+                    <label>Content (autosaves)</label>
+                    <span class="info-span" id="info-content"></span>
                 </div>
                 <div class="form-group-body">
                     <textarea rows="8" cols="90" id="content"><%= post.content %></textarea>
@@ -107,8 +109,7 @@ if (!post)
             <div class="form-group">
                 <div class="form-group-body">
                     <div class="form-checkbox">
-                        <label>
-                            <input type="checkbox" checked="checked" />
+                        <input type="checkbox" <% if (post.isHidden) { %><%= "checked" %><% } %> id="hidden" />
                             Hidden
                         </label>
                         <p class="note">
@@ -130,21 +131,78 @@ if (!post)
                     </details>
                 </div>
             </div>
-            
-            <div class="form-group" style="padding-top: 22px;margin-top: 25px;border-top: 1px solid #c5c5c5;">
-                <div class="form-group-body">
-                    <button type="submit" id="submit" class="btn btn-primary" style="margin-right: 5px;">Save Changes</button>
-                    <button type="button" id="submit" class="btn" style="margin-right: 5px;">Discard Draft</button>
-                    
-                    <label id="side-info"></label>
-                </div>
-            </div>
         </div>
     
         <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
         <script>
-            var previewContent = new SimpleMDE({ element: document.getElementById("previewContent") });
-            var content = new SimpleMDE({ element: document.getElementById("content") });
+            var previewContent = new SimpleMDE({ element: document.getElementById("preview-content"), autosave: { enabled: true } });
+            var content = new SimpleMDE({ element: document.getElementById("content"), autosave: { enabled: true } });
+            let contentInputTimeout;
+
+            content.codemirror.on("change", () =>
+            {
+                document.getElementById("info-content").textContent = "Saving...";
+                document.getElementById("info-content").style = "";
+
+                if (contentInputTimeout)
+                    clearTimeout(contentInputTimeout);
+
+                contentInputTimeout = setTimeout(() => {
+                    fetch("/admin/update/post", { 
+                        method: "POST",
+                        body: JSON.stringify({
+                            "id": document.getElementById("post-id").value,
+                            "content": content.value()
+                        })
+                    }) 
+                    .then(response => response.json())
+                    .then((data) => 
+                    {
+                        if (data.success) 
+                        {
+                            document.getElementById("info-content").textContent = "Autosaved! " + new Date().toString();
+                        }
+                        else
+                        {
+                            document.getElementById("info-content").textContent = "Failed to autosave!";
+                            document.getElementById("info-content").style = "color:red;";
+                        }
+                    });
+                }, 500);
+            });
+
+            previewContent.codemirror.on("change", () =>
+            {
+                document.getElementById("info-preview-content").textContent = "Saving...";
+                document.getElementById("info-preview-content").style = "";
+
+                if (contentInputTimeout)
+                    clearTimeout(contentInputTimeout);
+
+                contentInputTimeout = setTimeout(() => {
+                    fetch("/admin/update/post", { 
+                        method: "POST",
+                        body: JSON.stringify({
+                            "id": document.getElementById("post-id").value,
+                            "previewContent": previewContent.value()
+                        })
+                    }) 
+                    .then(response => response.json())
+                    .then((data) => 
+                    {
+                        if (data.success) 
+                        {
+                            document.getElementById("info-preview-content").textContent = "Autosaved! " + new Date().toString();
+                        }
+                        else
+                        {
+                            document.getElementById("info-preview-content").textContent = "Failed to autosave!";
+                            document.getElementById("info-preview-content").style = "color:red;";
+                        }
+                    });
+                }, 500);
+            });
         </script>
+
     </body>
 </html>   
