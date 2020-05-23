@@ -76,11 +76,13 @@ LightBlog.parseTitle = function(title)
 LightBlog.initDb = function()
 {
     // Initialize a db object.
-    let con = db.init(LightBlog.DB_CONNECTION_STRING);
+    let con = null;
 
     // Catch any exceptions.
     try 
     {
+        con = db.init(LightBlog.DB_CONNECTION_STRING);
+
         // Create our users table.
         con.prepare(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -88,7 +90,7 @@ LightBlog.initDb = function()
             display_name TEXT,
             password TEXT
         )`);
-        con.exec();
+        con.execSync();
  
         //////////////////////////////////////
 
@@ -97,24 +99,24 @@ LightBlog.initDb = function()
         con.prepare(`CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             owner INTEGER NOT NULL,
-            title TEXT UNIQUE,
-            display_title TEXT,
-            content TEXT, 
-            preview_content TEXT, 
-            draft_content TEXT, 
-            post_date TEXT,
-            edit_date TEXT,
-            cover_photo TEXT,
+            title TEXT UNIQUE NOT NULL DEFAULT '',
+            display_title TEXT NOT NULL DEFAULT '',
+            content TEXT NOT NULL DEFAULT '', 
+            preview_content TEXT NOT NULL DEFAULT '', 
+            draft_content TEXT NOT NULL DEFAULT '', 
+            post_date TEXT NOT NULL DEFAULT '',
+            edit_date TEXT NOT NULL DEFAULT '',
+            cover_photo TEXT NOT NULL DEFAULT '',
             is_hidden INTEGER DEFAULT 1
         )`);
-        con.exec();
+        con.execSync();
 
         //////////////////////////////////////
 
         // Create an index so we can fetch posts by the title.
         con.reset();  
         con.prepare(`CREATE INDEX IF NOT EXISTS title_index ON posts(title);`);
-        con.exec();
+        con.execSync();
         
         //////////////////////////////////////
 
@@ -128,7 +130,9 @@ LightBlog.initDb = function()
     catch (e)
     {
         print(`${LightBlog.LOG_TAG} Failed to initialize db. (${e})`);
-        con.close();
+
+        if (con)
+            con.close();
     }
 }
 
@@ -721,7 +725,7 @@ LightBlog.handleUpdatePostContent = async function(response, request)
         ////////////////////////////////////
 
         // Parse our provided data.
-        const info = JSON.parse(
+        let info = JSON.parse(
             request.read()
         );
 
