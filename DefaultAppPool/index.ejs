@@ -17,9 +17,9 @@
 			</ul>
 		</div>
 
-        <% const posts = LightBlog.getPosts(request.getQueryString() || "0"); %> 
+        <% const posts = await LightBlog.getPosts(request.getQueryString() || "0"); %> 
         <% if (posts) { %> 
-            <div class="content">
+            <div class="content"> 
                 <% for (const post of posts) {%>
                     <div class="postBox">
                         <% if (post.coverPhoto) { %> 

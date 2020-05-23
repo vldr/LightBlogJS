@@ -37,7 +37,7 @@ LightBlog.sessionTable = {};
 LightBlog.init = function()
 { 
     LightBlog.initDb();
-
+ 
     Web.init(); 
     Web.addRoute(["/", "/index"], "index.ejs");  
     Web.addRoute(["/view"], "view.ejs");  
@@ -51,6 +51,18 @@ LightBlog.init = function()
     Web.addEndpoint("/admin/check", LightBlog.handleCheckTitle);  
     Web.addEndpoint("/admin/new/post", LightBlog.handleNewPost);  
     Web.addEndpoint("/admin/update/post", LightBlog.handleUpdatePostContent);  
+}
+
+LightBlog.formattedDate = function() 
+{
+    const now = new Date();
+    const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    const day = days[now.getDay()];
+    const month = months[now.getMonth()];
+
+    return `${day}, ${month} ${now.getDate()}, ${now.getFullYear()}`;
 }
 
 /**
@@ -120,7 +132,7 @@ LightBlog.initDb = function()
  * @param page The page number of which posts lie in.
  * @returns Post object.
  */
-LightBlog.getPosts = function(page = "0")
+LightBlog.getPosts = async function(page = "0")
 {
     // Remove any question marks. 
     page = page.replace("?", "");
@@ -182,10 +194,10 @@ LightBlog.getPosts = function(page = "0")
         }
         
         // Query our statement.
-        con.query();
+        await con.query();
 
         // Loop throughout all the results.
-        while (con.next()) 
+        while (con.next())  
         {
             // Push our post to the list.
             posts.push(
@@ -207,10 +219,10 @@ LightBlog.getPosts = function(page = "0")
     } 
     catch (e)
     {
-        // Log that we've hit an exception.
+        // Log that we"ve hit an exception.
         print(`${LightBlog.LOG_TAG} Failed fetch homepage (${page}, ${e}).`);
 
-        // Close our database connection if it isn't null.
+        // Close our database connection if it isn"t null.
         if (con)
             con.close();
 
@@ -225,11 +237,11 @@ LightBlog.getPosts = function(page = "0")
 /**
  * Fetchs a given post.
  * @param id The title of the post. (not display title)
- * @returns A post object, or **null** if it doesn't exist.
+ * @returns A post object, or **null** if it doesn"t exist.
  */
-LightBlog.getPost = function(id, showHidden = false)
+LightBlog.getPost = async function(id, showHidden = false)
 {
-    // Check if we we're given an invalid id.
+    // Check if we we"re given an invalid id.
     if (id == null) return null;
 
     // Remove any question marks. 
@@ -280,7 +292,7 @@ LightBlog.getPost = function(id, showHidden = false)
         //////////////////////////////////////
 
         // Check if we got any results.
-        if (!con.queryRow())
+        if (!await con.queryRow())
             throw "no post was found";
 
         //////////////////////////////////////
@@ -319,7 +331,7 @@ LightBlog.getPost = function(id, showHidden = false)
     } 
     catch (e)
     {
-        // Log that we've hit an exception.
+        // Log that we"ve hit an exception.
         print(`${LightBlog.LOG_TAG} Failed fetch post (${id}, ${e}). `);
 
         // Close our database connection.
@@ -330,7 +342,7 @@ LightBlog.getPost = function(id, showHidden = false)
     // Return a null object indicating an error.
     return null
 }
-
+ 
 LightBlog.getSession = function(response, request) 
 {
     // Get the raw cookie header.
@@ -424,7 +436,7 @@ LightBlog.handleLogin = async function(response, request)
         con.bind(info.username);
 
         // Query our single row.
-        const isNonEmpty = con.queryRow();
+        const isNonEmpty = await con.queryRow();
 
         // Check if any user exists.
         if (!isNonEmpty) 
@@ -492,7 +504,7 @@ LightBlog.handleLogin = async function(response, request)
         // Log our error.
         print(`${LightBlog.LOG_TAG} Exception at handleLogin (${e})`);
 
-        // Close our connection if it's open.
+        // Close our connection if it"s open.
         if (con) 
            con.close();
 
@@ -515,7 +527,7 @@ LightBlog.handleLogin = async function(response, request)
     return FINISH;
 }
 
-LightBlog.handleCheckTitle = function(response, request)
+LightBlog.handleCheckTitle = async function(response, request)
 {
     // Setup a result object.
     let result = {};
@@ -560,7 +572,7 @@ LightBlog.handleCheckTitle = function(response, request)
         ////////////////////////////////////
 
         // Set a successful result.
-        result = { success: true, isTaken: con.queryRow() };
+        result = { success: true, isTaken: await con.queryRow() };
 
         // Close our database connection.
         con.close();
@@ -570,7 +582,7 @@ LightBlog.handleCheckTitle = function(response, request)
         // Log our error.
         print(`${LightBlog.LOG_TAG} Exception at handleCheckTitle (${e})`);
 
-        // Close our connection if it's open.
+        // Close our connection if it"s open.
         if (con) 
            con.close();
 
@@ -593,7 +605,7 @@ LightBlog.handleCheckTitle = function(response, request)
     return FINISH;
 }
 
-LightBlog.handleNewPost = function(response, request)
+LightBlog.handleNewPost = async function(response, request)
 {
     // Setup a result object.
     let result = {};
@@ -625,7 +637,7 @@ LightBlog.handleNewPost = function(response, request)
             throw "no title provided.";
 
         // Transform our title.
-        const title = info.title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, '').replace(/\s/g, "-");
+        const title = info.title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
         const displayTitle = info.title;
 
         ////////////////////////////////////
@@ -634,15 +646,16 @@ LightBlog.handleNewPost = function(response, request)
         con = db.init(LightBlog.DB_CONNECTION_STRING);
 
         // Prepare to select our user with the matching username.
-        con.prepare(`INSERT INTO posts (owner, title, display_title) VALUES (?, ?, ?)`);
+        con.prepare(`INSERT INTO posts (owner, title, display_title, post_date) VALUES (?, ?, ?, ?)`);
 
         // Bind our values.
         con.bind(session.id);
         con.bind(title);
         con.bind(displayTitle);
+        con.bind(LightBlog.formattedDate());
 
         // Execute our query.
-        con.exec();
+        await con.exec();
 
         ////////////////////////////////////
 
@@ -657,7 +670,7 @@ LightBlog.handleNewPost = function(response, request)
         // Log our error.
         print(`${LightBlog.LOG_TAG} Exception at handleNewPost (${e})`);
 
-        // Close our connection if it's open.
+        // Close our connection if it"s open.
         if (con) 
            con.close();
 
@@ -680,7 +693,7 @@ LightBlog.handleNewPost = function(response, request)
     return FINISH;
 }
 
-LightBlog.handleUpdatePostContent = function(response, request)
+LightBlog.handleUpdatePostContent = async function(response, request)
 {
     // Setup a result object.
     let result = {};
@@ -723,7 +736,7 @@ LightBlog.handleUpdatePostContent = function(response, request)
             con.bind(info.content);
             con.bind(info.id);
 
-            con.exec();
+            await con.exec();
             con.reset();
         }
         
@@ -734,25 +747,41 @@ LightBlog.handleUpdatePostContent = function(response, request)
             con.bind(info.previewContent);
             con.bind(info.id);
 
-            con.exec();
+            await con.exec();
             con.reset();
         }
 
         if (info.title && info.title.length > 0) 
         {
-            con.prepare(`UPDATE posts SET title = ? WHERE title = ?`);
+            con.prepare(`UPDATE posts SET title = ?, display_title = ? WHERE title = ?`);
 
+            const title = info.title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
+
+            con.bind(title);
             con.bind(info.title);
             con.bind(info.id);
 
-            con.exec();
+            await con.exec();
+            con.reset();
+
+            result.id = title;
+        }
+
+        if (info.coverPhoto && info.coverPhoto.length > 0) 
+        {
+            con.prepare(`UPDATE posts SET cover_photo = ? WHERE title = ?`);
+            
+            con.bind(info.coverPhoto);
+            con.bind(info.id);
+
+            await con.exec();
             con.reset();
         }
 
         ////////////////////////////////////
 
         // Set a successful result.
-        result = { success: true };
+        result.success = true;
 
         // Close our database connection.
         con.close();
@@ -762,7 +791,7 @@ LightBlog.handleUpdatePostContent = function(response, request)
         // Log our error.
         print(`${LightBlog.LOG_TAG} Exception at handleUpdatePostContent (${e})`);
 
-        // Close our connection if it's open.
+        // Close our connection if it"s open.
         if (con) 
            con.close();
 

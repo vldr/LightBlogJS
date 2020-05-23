@@ -12,8 +12,8 @@ if (!session)
     <head>  
         <title>Dashboard - LightBlog</title>
 
-        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
-        <link href="/admin.css" rel="stylesheet" media="screen">
+        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" onload="if(media!='all')media='all'" />
+        <link href="/admin.css" rel="stylesheet" media="screen" onload="if(media!='all')media='all'">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -28,7 +28,7 @@ if (!session)
             <a href="logout">Logout</a>
         </div> 
         <div class="posts"> 
-            <% const posts = LightBlog.getPosts("-1"); %> 
+            <% const posts = await LightBlog.getPosts("-1"); %> 
             <% if (posts) { %> 
                 <% for (const post of posts) {%>
                     <div class="postBox">

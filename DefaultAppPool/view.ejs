@@ -1,7 +1,7 @@
 <% 
-const post = LightBlog.getPost(request.getQueryString());
+const post = await LightBlog.getPost(request.getQueryString());
 
-if (!post) 
+if (!post)  
 {
     response.redirect("/", true, true); 
     return "";

@@ -9,12 +9,12 @@ if (!session)
 
 ////////////////////////////////////////////////
 
-const post = LightBlog.getPost(request.getQueryString(), true);
+const post = await LightBlog.getPost(request.getQueryString(), true);
 
 if (!post) 
 {
     response.redirect(LightBlog.DASHBOARD_PATH, true, false); 
-    return "";
+    return ""; 
 }
 
 %> 
@@ -23,9 +23,9 @@ if (!post)
     <head>  
         <title><%= post.title %> - LightBlog</title>
 
-        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
-        <link href="/admin.css" rel="stylesheet" media="screen">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+        <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" onload="if(media!='all')media='all'" />
+        <link href="/admin.css" rel="stylesheet" media="screen" onload="if(media!='all')media='all'">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" onload="if(media!='all')media='all'">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abhaya+Libre" media="all" onload="if(media!='all')media='all'">
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -52,16 +52,7 @@ if (!post)
                     <input class="form-control disabled" disabled type="text" value="<%= post.date %>" />
                 </div>
             </div>
-
-            <div class="form-group">
-                <div class="form-group-header">
-                    <label>Last Edit Date</label> 
-                </div>
-                <div class="form-group-body">
-                    <input class="form-control disabled" disabled id="last-edit-date" type="text" value="<%= post.editDate %>" />
-                </div>
-            </div>
-
+            
             <!--------------------------------------------------------->
 
             <div class="form-group">
@@ -137,17 +128,18 @@ if (!post)
         <script>
             var previewContent = new SimpleMDE({ element: document.getElementById("preview-content"), autosave: { enabled: true } });
             var content = new SimpleMDE({ element: document.getElementById("content"), autosave: { enabled: true } });
-            let contentInputTimeout;
-
+            
+            
+            let inputTimeoutContent;
             content.codemirror.on("change", () =>
             {
                 document.getElementById("info-content").textContent = "Saving...";
                 document.getElementById("info-content").style = "";
 
-                if (contentInputTimeout)
-                    clearTimeout(contentInputTimeout);
+                if (inputTimeoutContent)
+                    clearTimeout(inputTimeoutContent);
 
-                contentInputTimeout = setTimeout(() => {
+                inputTimeoutContent = setTimeout(() => {
                     fetch("/admin/update/post", { 
                         method: "POST",
                         body: JSON.stringify({
@@ -171,15 +163,16 @@ if (!post)
                 }, 500);
             });
 
+            let inputTimeoutPreviewContent;
             previewContent.codemirror.on("change", () =>
             {
                 document.getElementById("info-preview-content").textContent = "Saving...";
                 document.getElementById("info-preview-content").style = "";
 
-                if (contentInputTimeout)
-                    clearTimeout(contentInputTimeout);
+                if (inputTimeoutPreviewContent)
+                    clearTimeout(inputTimeoutPreviewContent);
 
-                contentInputTimeout = setTimeout(() => {
+                inputTimeoutPreviewContent = setTimeout(() => {
                     fetch("/admin/update/post", { 
                         method: "POST",
                         body: JSON.stringify({
@@ -202,6 +195,72 @@ if (!post)
                     });
                 }, 500);
             });
+            
+            let inputTimeoutTitle;
+            document.getElementById("title").oninput = function(event) 
+            {
+                document.getElementById("info-title").textContent = "Processing...";
+                document.getElementById("info-title").style = "";
+
+                if (inputTimeoutTitle)
+                    clearTimeout(inputTimeoutTitle);
+
+                inputTimeoutTitle = setTimeout(() => {
+                    fetch("/admin/update/post", { 
+                        method: "POST",
+                        body: JSON.stringify({
+                            "id": document.getElementById("post-id").value,
+                            "title": document.getElementById("title").value
+                        })
+                    }) 
+                    .then(response => response.json())
+                    .then((data) => {
+                        if (data.success)
+                        {
+                            document.getElementById("info-title").textContent = "Autosaved! " + new Date().toString();
+                            document.getElementById("post-id").value = data.id;
+                        }
+                        else
+                        {
+                            document.getElementById("info-title").textContent = "Invalid title provided, unable to save.";
+                            document.getElementById("info-title").style = "color:red;";
+                        }
+                    });
+                }, 500);
+            };
+
+            let inputTimeoutCoverPhoto;
+            document.getElementById("cover-photo").oninput = function(event) 
+            {
+                document.getElementById("info-cover-photo").textContent = "Processing...";
+                document.getElementById("info-cover-photo").style = "";
+
+                if (inputTimeoutCoverPhoto)
+                    clearTimeout(inputTimeoutCoverPhoto);
+
+                inputTimeoutCoverPhoto = setTimeout(() => {
+                    fetch("/admin/update/post", { 
+                        method: "POST",
+                        body: JSON.stringify({
+                            "id": document.getElementById("post-id").value,
+                            "coverPhoto": document.getElementById("cover-photo").value
+                        })
+                    }) 
+                    .then(response => response.json())
+                    .then((data) => {
+                        if (data.success)
+                        {
+                            document.getElementById("info-cover-photo").textContent = "Autosaved! " + new Date().toString();
+                            document.getElementById("cover-photo-preview").style = `background-image:url('${document.getElementById("cover-photo").value}')`;
+                        }
+                        else
+                        {
+                            document.getElementById("info-cover-photo").textContent = "Unable to save.";
+                            document.getElementById("info-cover-photo").style = "color:red;";
+                        }
+                    });
+                }, 500);
+            };
         </script>
 
     </body>

@@ -52,14 +52,14 @@ Web.handleRequest = function(response, request)
 /**
  * Handles every routed request.
  */ 
-Web.handleRoute = function(response, request, routeTemplate)
+Web.handleRoute = async function(response, request, routeTemplate)
 {
     // Setup a boolean that will determine whether we should cache the page.
     response.cache = false;
  
     // Get our rendered page.
-    const rendered = routeTemplate(
-        {
+    const rendered = await routeTemplate(
+        { 
             response: response,
             request: request
         }
@@ -94,7 +94,9 @@ Web.handleRoute = function(response, request, routeTemplate)
 Web.addRoute = function(paths, fileName)
 {
 	const str = fs.read(fileName);
-	const template = ejs.compile(str);
+	const template = ejs.compile(str, {
+        async: true
+    });
 	
 	for (let i = 0; i < paths.length; i++)
 	{
@@ -136,7 +138,9 @@ Web.directoryUpdate = function()
         if (route.endpoint) continue;
 
         const str = fs.read(route.fileName);
-        const template = ejs.compile(str);
+        const template = ejs.compile(str, {
+            async: true
+        });
 
         route.template = template;
         
