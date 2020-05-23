@@ -65,6 +65,11 @@ LightBlog.formattedDate = function()
     return `${day}, ${month} ${now.getDate()}, ${now.getFullYear()}`;
 }
 
+LightBlog.parseTitle = function(title)
+{
+   return title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
+}
+
 /**
  * Initializes the database.
  */
@@ -637,7 +642,7 @@ LightBlog.handleNewPost = async function(response, request)
             throw "no title provided.";
 
         // Transform our title.
-        const title = info.title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
+        const title = LightBlog.parseTitle(info.title);
         const displayTitle = info.title;
 
         ////////////////////////////////////
@@ -728,7 +733,22 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
         // Initialize our connection.
         con = db.init(LightBlog.DB_CONNECTION_STRING);
- 
+
+        ////////////////////////////////////
+
+        // Perform deletion, reset the info object afterwards.
+        if (info.delete)
+        {
+            con.prepare(`DELETE FROM posts WHERE title = ?`);
+            con.bind(info.id);
+
+            await con.exec();
+
+            info = {};
+        }
+
+        ////////////////////////////////////
+
         if (info.content && info.content.length > 0) 
         {
             con.prepare(`UPDATE posts SET content = ? WHERE title = ?`);
@@ -755,7 +775,7 @@ LightBlog.handleUpdatePostContent = async function(response, request)
         {
             con.prepare(`UPDATE posts SET title = ?, display_title = ? WHERE title = ?`);
 
-            const title = info.title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
+            const title = LightBlog.parseTitle(info.title);
 
             con.bind(title);
             con.bind(info.title);
@@ -770,8 +790,19 @@ LightBlog.handleUpdatePostContent = async function(response, request)
         if (info.coverPhoto && info.coverPhoto.length > 0) 
         {
             con.prepare(`UPDATE posts SET cover_photo = ? WHERE title = ?`);
-            
+
             con.bind(info.coverPhoto);
+            con.bind(info.id); 
+
+            await con.exec();
+            con.reset();
+        }
+        
+        if (info.hidden) 
+        {
+            con.prepare(`UPDATE posts SET is_hidden = ? WHERE title = ?`);
+ 
+            con.bind(info.hidden);
             con.bind(info.id);
 
             await con.exec();

@@ -79,7 +79,7 @@ if (!post)
 
             <div class="form-group">
                 <div class="form-group-header">
-                    <label>Preview Content (autosaves)</label>
+                    <label>Preview Content</label>
                     <span class="info-span" id="info-preview-content"></span>
                 </div>
                 <div class="form-group-body">
@@ -89,7 +89,7 @@ if (!post)
 
             <div class="form-group">
                 <div class="form-group-header">
-                    <label>Content (autosaves)</label>
+                    <label>Content</label>
                     <span class="info-span" id="info-content"></span>
                 </div>
                 <div class="form-group-body">
@@ -103,6 +103,7 @@ if (!post)
                         <input type="checkbox" <% if (post.isHidden) { %><%= "checked" %><% } %> id="hidden" />
                             Hidden
                         </label>
+                        <span class="info-span" id="info-hidden"></span>
                         <p class="note">
                             Enabling this will <strong>hide</strong> the post from the public!
                         </p>
@@ -115,9 +116,11 @@ if (!post)
                     <details>
                         <summary class="btn btn-danger">Delete</summary>
                         <div class="border p-3 mt-2">
-                            <label>Enter the title of the post to delete.</label><br><br>
-                            <input class="form-control" type="text" id="delete-title" /><br><br>
-                            <button type="button" id="submit" class="btn btn-danger" >Delete</button>
+                            <label>Enter the title of the post to delete.</label>
+                            <span class="info-span" id="info-delete"></span><br><br>
+
+                            <input class="form-control" type="text" id="delete" /><br><br>
+                            <button type="button" id="delete-post" class="btn btn-danger" >Delete</button>
                         </div>
                     </details>
                 </div>
@@ -128,7 +131,6 @@ if (!post)
         <script>
             var previewContent = new SimpleMDE({ element: document.getElementById("preview-content"), autosave: { enabled: true } });
             var content = new SimpleMDE({ element: document.getElementById("content"), autosave: { enabled: true } });
-            
             
             let inputTimeoutContent;
             content.codemirror.on("change", () =>
@@ -260,6 +262,69 @@ if (!post)
                         }
                     });
                 }, 500);
+            };
+
+            let inputTimeoutHidden;
+            document.getElementById("hidden").onclick = function(event) 
+            {
+                document.getElementById("info-hidden").textContent = "Processing...";
+                document.getElementById("info-hidden").style = "";
+
+                inputTimeoutHidden = setTimeout(() => {
+                    fetch("/admin/update/post", { 
+                        method: "POST",
+                        body: JSON.stringify({
+                            "id": document.getElementById("post-id").value,
+                            "hidden": event.target.checked ? "1" : "0"
+                        })
+                    }) 
+                    .then(response => response.json())
+                    .then((data) => {
+                        if (data.success)
+                        {
+                            document.getElementById("info-hidden").textContent = "Autosaved! " + new Date().toString();
+                        }
+                        else
+                        {
+                            document.getElementById("info-hidden").textContent = "Unable to save.";
+                            document.getElementById("info-hidden").style = "color:red;";
+                        }
+                    });
+                }, 500);
+            };
+
+            document.getElementById("delete-post").onclick = function(event) 
+            {
+                document.getElementById("info-delete").textContent = "Processing...";
+                document.getElementById("info-delete").style = "";
+
+                if (document.getElementById("delete").value != document.getElementById("title").value)
+                {
+                    document.getElementById("info-delete").textContent = "Does not match title.";
+                    document.getElementById("info-delete").style = "color:red;";
+
+                    return;
+                }
+
+                fetch("/admin/update/post", { 
+                    method: "POST",
+                    body: JSON.stringify({
+                        "id": document.getElementById("post-id").value,
+                        "delete": "1"
+                    })
+                }) 
+                .then(response => response.json())
+                .then((data) => {
+                    if (data.success)
+                    {
+                        window.location.replace("<%= LightBlog.DASHBOARD_PATH %>");
+                    }
+                    else
+                    {
+                        document.getElementById("info-delete").textContent = "Unable to delete post.";
+                        document.getElementById("info-delete").style = "color:red;";
+                    }
+                });
             };
         </script>
 
