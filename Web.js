@@ -12,6 +12,9 @@ Web.routeTable = {};
 
 // A table containing all cached webpages.
 Web.cacheTable = {}; 
+
+// A callback that can be set for users of the framework.
+Web.directoryUpdateCallback = null;
  
 /**
  * Handles any raw request to the web server.
@@ -147,7 +150,10 @@ Web.directoryUpdate = function()
         print(`${Web.LOG_TAG} Updating route "${path}".`);
     }
 
-    Web.cacheTable = {};
+    Web.clearCache();
+
+    if (Web.directoryUpdateCallback)
+        Web.directoryUpdateCallback();
 }
 
 /**
@@ -155,8 +161,31 @@ Web.directoryUpdate = function()
  */
 Web.init = function(shouldRegister = true) 
 {
+    // Check if the user wants to manually call handle request.
     if (shouldRegister)
         register(Web.handleRequest);
-        
+      
+    // Register for directory updates.
     fs.register(Web.directoryUpdate);
+
+    // Perform a gzip operation for optimization.
+    pako.gzip(`WEB FRAMEWORK`);
+}
+
+/**
+ * Sets the callback.
+ */
+Web.setDirectoryUpdateCallback = function(callback)
+{
+    this.directoryUpdateCallback = callback;
+}
+
+/**
+ * Clears the cache table.
+ */
+Web.clearCache = function()
+{
+    print(`${Web.LOG_TAG} Clearing cache table.`);
+
+    Web.cacheTable = {};
 }

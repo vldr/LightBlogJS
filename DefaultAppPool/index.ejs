@@ -19,6 +19,7 @@
 
         <% const posts = await LightBlog.getPosts(request.getQueryString() || "0"); %> 
         <% if (posts) { %> 
+            <% response.cache = true; %> 
             <div class="content"> 
                 <% for (const post of posts) {%>
                     <div class="postBox">

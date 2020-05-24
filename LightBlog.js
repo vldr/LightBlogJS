@@ -799,6 +799,8 @@ LightBlog.handleNewPost = async function(response, request)
 
         ////////////////////////////////////
 
+        Web.clearCache();
+
         // Set a successful result.
         result = { success: true };
 
@@ -948,6 +950,9 @@ LightBlog.handleUpdatePostContent = async function(response, request)
         }
 
         ////////////////////////////////////
+
+        // Clear our cache.
+        Web.clearCache();
 
         // Set a successful result.
         result.success = true;
