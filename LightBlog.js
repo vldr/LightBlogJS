@@ -85,9 +85,9 @@ LightBlog.initDb = function()
             display_title TEXT NOT NULL DEFAULT '',
             content TEXT NOT NULL DEFAULT '', 
             preview_content TEXT NOT NULL DEFAULT '', 
-            draft_content TEXT NOT NULL DEFAULT '', 
+            keywords TEXT NOT NULL DEFAULT '', 
+            desc TEXT NOT NULL DEFAULT '', 
             post_date TEXT NOT NULL DEFAULT '',
-            edit_date TEXT NOT NULL DEFAULT '',
             cover_photo TEXT NOT NULL DEFAULT '',
             is_hidden INTEGER DEFAULT 1
         )`);
@@ -390,6 +390,8 @@ LightBlog.getPost = async function(id, showHidden = false)
             posts.post_date, 
             posts.cover_photo, 
             posts.is_hidden,
+            posts.keywords,
+            posts.desc,
             posts.title,
             posts.preview_content,
             posts.owner 
@@ -400,9 +402,12 @@ LightBlog.getPost = async function(id, showHidden = false)
         `
             SELECT 
             posts.content, 
+            posts.preview_content, 
             posts.display_title, 
             posts.post_date, 
             posts.cover_photo,
+            posts.keywords,
+            posts.desc,
             posts.owner 
             FROM posts
             WHERE posts.title=? AND posts.is_hidden=0
@@ -433,14 +438,19 @@ LightBlog.getPost = async function(id, showHidden = false)
             isHidden: con.fetch(DB_BOOL, "is_hidden"),
             id: con.fetch(DB_STRING, "title"),
             previewContent: con.fetch(DB_STRING, "preview_content"),
+            desc: con.fetch(DB_STRING, "desc"),
+            keywords: con.fetch(DB_STRING, "keywords")
         } 
         :
         {
             author,
             content: con.fetch(DB_STRING, "content"),
+            previewContent: con.fetch(DB_STRING, "preview_content"),
             title: con.fetch(DB_STRING, "display_title"),
             date: con.fetch(DB_STRING, "post_date"),
-            coverPhoto: con.fetch(DB_STRING, "cover_photo")
+            coverPhoto: con.fetch(DB_STRING, "cover_photo"),
+            desc: con.fetch(DB_STRING, "desc"),
+            keywords: con.fetch(DB_STRING, "keywords")
         };
 
         //////////////////////////////////////
@@ -881,7 +891,7 @@ LightBlog.handleUpdatePostContent = async function(response, request)
         ////////////////////////////////////
 
         // Perform deletion, reset the info object afterwards.
-        if (info.delete)
+        if ("delete" in info)
         {
             con.prepare(`DELETE FROM posts WHERE title = ?`);
             con.bind(info.id);
@@ -893,29 +903,7 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
         ////////////////////////////////////
 
-        if (info.content && info.content.length > 0) 
-        {
-            con.prepare(`UPDATE posts SET content = ? WHERE title = ?`);
-
-            con.bind(info.content);
-            con.bind(info.id);
-
-            await con.exec();
-            con.reset();
-        }
-        
-        if (info.previewContent && info.previewContent.length > 0) 
-        {
-            con.prepare(`UPDATE posts SET preview_content = ? WHERE title = ?`);
-
-            con.bind(info.previewContent);
-            con.bind(info.id);
-
-            await con.exec();
-            con.reset();
-        }
-
-        if (info.title && info.title.length > 0) 
+        if (info.title) 
         {
             con.prepare(`UPDATE posts SET title = ?, display_title = ? WHERE title = ?`);
 
@@ -931,7 +919,29 @@ LightBlog.handleUpdatePostContent = async function(response, request)
             result.id = title;
         }
 
-        if (info.coverPhoto && info.coverPhoto.length > 0) 
+        if ("content" in info) 
+        {
+            con.prepare(`UPDATE posts SET content = ? WHERE title = ?`);
+
+            con.bind(info.content);
+            con.bind(info.id);
+
+            await con.exec();
+            con.reset();
+        }
+        
+        if ("previewContent" in info) 
+        {
+            con.prepare(`UPDATE posts SET preview_content = ? WHERE title = ?`);
+
+            con.bind(info.previewContent);
+            con.bind(info.id);
+
+            await con.exec();
+            con.reset();
+        }
+
+        if ("coverPhoto" in info) 
         {
             con.prepare(`UPDATE posts SET cover_photo = ? WHERE title = ?`);
 
@@ -941,8 +951,30 @@ LightBlog.handleUpdatePostContent = async function(response, request)
             await con.exec();
             con.reset();
         }
+
+        if ("desc" in info) 
+        {
+            con.prepare(`UPDATE posts SET desc = ? WHERE title = ?`);
+
+            con.bind(info.desc);
+            con.bind(info.id); 
+
+            await con.exec();
+            con.reset();
+        }
+
+        if ("keywords" in info) 
+        {
+            con.prepare(`UPDATE posts SET keywords = ? WHERE title = ?`);
+
+            con.bind(info.keywords);
+            con.bind(info.id); 
+
+            await con.exec();
+            con.reset();
+        }
         
-        if (info.hidden) 
+        if ("hidden" in info) 
         {
             con.prepare(`UPDATE posts SET is_hidden = ? WHERE title = ?`);
  

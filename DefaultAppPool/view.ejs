@@ -18,6 +18,17 @@ response.cache = true;
         <link href="<%= LightBlog.STYLE_PATH %>" rel="stylesheet" media="screen">
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <% if (post.keywords) { %>
+            <meta name="keywords" content="<%= post.keywords %>">
+        <% } %> 
+
+        <% if (post.desc) { %>
+            <meta name="description" content="<%= post.desc %>">
+        <% } %> 
+
+        <meta name="author" content="<%= post.author %>">
+        <meta charset="UTF-8">
     </head>          
     <body>
         <div class="header-nav header-nav-post">
