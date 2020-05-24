@@ -21,6 +21,7 @@ LightBlog.SESSION_IDENTIFIER_LENGTH = 33;
 
 // The amount of time(ms) a session stays valid for.
 LightBlog.SESSION_EXPIRY = 1500000;
+LightBlog.SESSION_EXPIRY_EXTENDED = 2590000000;
 
 // Path to the dashboard.
 LightBlog.DASHBOARD_PATH = "/admin/dashboard";
@@ -28,8 +29,11 @@ LightBlog.DASHBOARD_PATH = "/admin/dashboard";
 // The path to index.
 LightBlog.INDEX_PATH = "/admin/";
 
-// The array containg all the session.
+// The object containg all the session by the session identifier.
 LightBlog.sessionTable = {};
+
+// A list containing all the users.
+LightBlog.usersTable = [];
  
 /**
  * Initializes the lightblog database and web framework.
@@ -37,6 +41,7 @@ LightBlog.sessionTable = {};
 LightBlog.init = function()
 { 
     LightBlog.initDb();
+    LightBlog.initUsers();
  
     Web.init(); 
     Web.addRoute(["/", "/index"], "index.ejs");  
@@ -53,23 +58,6 @@ LightBlog.init = function()
     Web.addEndpoint("/admin/update/post", LightBlog.handleUpdatePostContent);  
 }
 
-LightBlog.formattedDate = function() 
-{
-    const now = new Date();
-    const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-    const day = days[now.getDay()];
-    const month = months[now.getMonth()];
-
-    return `${day}, ${month} ${now.getDate()}, ${now.getFullYear()}`;
-}
-
-LightBlog.parseTitle = function(title)
-{
-   return title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
-}
-
 /**
  * Initializes the database.
  */
@@ -82,20 +70,10 @@ LightBlog.initDb = function()
     try 
     {
         con = db.init(LightBlog.DB_CONNECTION_STRING);
-
-        // Create our users table.
-        con.prepare(`CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            username TEXT,
-            display_name TEXT,
-            password TEXT
-        )`);
-        con.execSync();
  
         //////////////////////////////////////
 
         // Create our posts table.
-        con.reset();
         con.prepare(`CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             owner INTEGER NOT NULL,
@@ -137,6 +115,147 @@ LightBlog.initDb = function()
 }
 
 /**
+ * Initializes the users table.
+ */
+LightBlog.initUsers = async function()
+{
+    try 
+    {
+        // Check if the file exists.
+        if (!fs.exists("users.json"))
+        {
+            print(`${LightBlog.LOG_TAG} No users.json file exists, skipping.`);
+            return;
+        }
+
+        // Fetch the users file.
+        const data = fs.read("users.json");
+
+        // Parse the json data.
+        const users = JSON.parse(data);
+ 
+        //////////////////////////////////////
+
+        if (!Array.isArray(users))
+            throw "users object is not an array."
+
+        // Check if all properties exist.
+        for (let i = 0; i < users.length; i++)
+        {
+            const user = users[i];
+
+            // Set the user id as the index.
+            user.id = i;
+
+            if (!user.username)
+                throw `user at index (${i}) is missing a username.`;
+
+            if (!user.name)
+                throw `user at index (${i}) is missing a name.`;
+
+            if (user.password)
+            {
+                // Generate a hash if one doesn't exist.
+                user.hash = await crypto.bcrypt.hash(user.password);
+
+                // Delete the user's password original password.
+                delete user.password;
+
+                // Write our parsed results back into the file.
+                fs.write("users.json", JSON.stringify(users));
+            }
+
+            if (!user.hash)
+                throw `user at index (${i}) is missing a hash (hashed password).`;
+        }
+
+        // Update our current users table with a sorted users table.
+        LightBlog.usersTable = users.sort((a, b) => a.username.localeCompare(b.username));
+
+        //////////////////////////////////////
+
+        print(`${LightBlog.LOG_TAG} Successfully initialized users.`);
+    } 
+    catch (e)
+    {
+        print(`${LightBlog.LOG_TAG} Failed to initialize users. (${e})`);
+    }
+}
+
+/**
+ * Uses binary search to find user by username.
+ */
+LightBlog.findUserByUsername = function(username) 
+{ 
+    let mid = 0;
+    let low = 0;
+    let high = LightBlog.usersTable.length - 1;
+ 
+    while (high >= low) 
+    {
+        mid = Math.floor((high + low) / 2); 
+
+        const comparision = LightBlog.usersTable[mid].username.localeCompare(username);
+   
+        if (comparision < 0) 
+        {
+            low = mid + 1;
+        }
+        else if (comparision > 0) 
+        {
+            high = mid - 1;
+        }
+        else 
+        {
+            return LightBlog.usersTable[mid];
+        }
+    } 
+   
+    return null; 
+} 
+
+/**
+ * Generates a random string with given length.
+ */
+LightBlog.randomString = function(length)
+{
+    let result = "";
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++)
+    {
+        result += characters.charAt(
+            Math.floor(Math.random() * charactersLength)
+        );
+    }
+
+    return result;
+};
+
+/**
+ * Gets the current date formatted.
+ */
+LightBlog.formattedDate = function() 
+{
+    const now = new Date();
+    const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    const day = days[now.getDay()];
+    const month = months[now.getMonth()];
+
+    return `${day}, ${month} ${now.getDate()}, ${now.getFullYear()}`;
+}
+
+/**
+ * Transforms a title into a id title.
+ */
+LightBlog.parseTitle = function(title)
+{
+   return title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
+}
+
+/**
  * Returns a list of posts 
  * @param page The page number of which posts lie in.
  * @returns Post object.
@@ -163,42 +282,33 @@ LightBlog.getPosts = async function(page = "0")
         {
             con.prepare(`
                 SELECT 
-                users.display_name, 
-                posts.preview_content, 
-                posts.title, 
-                posts.post_date, 
-                posts.cover_photo, 
-                posts.display_title, 
-                posts.is_hidden,
-                posts.owner
-                FROM posts INNER JOIN users ON users.id=posts.owner
+                preview_content, 
+                title, 
+                post_date, 
+                cover_photo, 
+                display_title, 
+                is_hidden,
+                owner
+                FROM posts
                 ORDER BY posts.id DESC
             `);
         }
         // Otherwise, fetch the first 10 posts by the offset.
         else
-        {
+        { 
             // Prepare our statement.
             con.prepare(`
-                SELECT 
-                users.display_name, 
-                posts.preview_content, 
-                posts.title, 
-                posts.post_date, 
-                posts.cover_photo, 
-                posts.display_title, 
-                posts.is_hidden,
-                posts.owner
-                FROM posts INNER JOIN users ON users.id=posts.owner
-                WHERE posts.is_hidden=0
-                ORDER BY posts.id DESC
+                SELECT preview_content, title, post_date, cover_photo, display_title, is_hidden, owner
+                FROM posts
+                WHERE is_hidden=0
+                ORDER BY id DESC
                 LIMIT 10 OFFSET ?
             `);
 
             // Calculate the offset.
             const offset = (parseInt(page, 10) || 0) * 10;
 
-            // Bind our offset number.
+            // Bind our offset number. 
             con.bind(offset);
         }
         
@@ -208,16 +318,19 @@ LightBlog.getPosts = async function(page = "0")
         // Loop throughout all the results.
         while (con.next())  
         {
+            const owner = con.fetch(DB_STRING, "owner");
+            const author = LightBlog.usersTable[owner] ? LightBlog.usersTable[owner].name : "(unknown)";
+
             // Push our post to the list.
             posts.push(
                 {
-                    author: con.fetch(DB_STRING, 0),
-                    content: con.fetch(DB_STRING, 1),
-                    id: con.fetch(DB_STRING, 2),
-                    date: con.fetch(DB_STRING, 3),
-                    coverPhoto: con.fetch(DB_STRING, 4), 
-                    title: con.fetch(DB_STRING, 5),
-                    isHidden: con.fetch(DB_BOOL, 6)
+                    author,
+                    content: con.fetch(DB_STRING, "preview_content"),
+                    id: con.fetch(DB_STRING, "title"),
+                    date: con.fetch(DB_STRING, "post_date"),
+                    coverPhoto: con.fetch(DB_STRING, "cover_photo"), 
+                    title: con.fetch(DB_STRING, "display_title"),
+                    isHidden: con.fetch(DB_BOOL, "is_hidden")
                 }
             );
         }
@@ -229,7 +342,7 @@ LightBlog.getPosts = async function(page = "0")
     catch (e)
     {
         // Log that we"ve hit an exception.
-        print(`${LightBlog.LOG_TAG} Failed fetch homepage (${page}, ${e}).`);
+        print(`${LightBlog.LOG_TAG} Exception at getPosts (${page}, ${e}).`);
 
         // Close our database connection if it isn"t null.
         if (con)
@@ -268,7 +381,6 @@ LightBlog.getPost = async function(id, showHidden = false)
         // Prepare our statement.
         con.prepare(showHidden ? `
             SELECT 
-            users.display_name, 
             posts.content, 
             posts.display_title, 
             posts.post_date, 
@@ -276,22 +388,19 @@ LightBlog.getPost = async function(id, showHidden = false)
             posts.is_hidden,
             posts.title,
             posts.preview_content,
-            posts.draft_content,
-            posts.edit_date,
             posts.owner 
-            FROM posts INNER JOIN users ON users.id=posts.owner 
+            FROM posts
             WHERE posts.title=?
         `
         :
         `
             SELECT 
-            users.display_name, 
             posts.content, 
             posts.display_title, 
             posts.post_date, 
             posts.cover_photo,
             posts.owner 
-            FROM posts INNER JOIN users ON users.id=posts.owner 
+            FROM posts
             WHERE posts.title=? AND posts.is_hidden=0
         `);
 
@@ -306,27 +415,28 @@ LightBlog.getPost = async function(id, showHidden = false)
 
         //////////////////////////////////////
 
+        const owner = con.fetch(DB_STRING, "owner");
+        const author = LightBlog.usersTable[owner] ? LightBlog.usersTable[owner].name : "(unknown)";
+
         // Setup a post object.
         const post = showHidden ? 
         {
-            author: con.fetch(DB_STRING, 0),
-            content: con.fetch(DB_STRING, 1),
-            title: con.fetch(DB_STRING, 2),
-            date: con.fetch(DB_STRING, 3),
-            coverPhoto: con.fetch(DB_STRING, 4),
-            isHidden: con.fetch(DB_BOOL, 5),
-            id: con.fetch(DB_STRING, 6),
-            previewContent: con.fetch(DB_STRING, 7),
-            draftContent: con.fetch(DB_STRING, 8),
-            editDate: con.fetch(DB_STRING, 9)
+            author,
+            content: con.fetch(DB_STRING, "content"),
+            title: con.fetch(DB_STRING, "display_title"),
+            date: con.fetch(DB_STRING, "post_date"),
+            coverPhoto: con.fetch(DB_STRING, "cover_photo"),
+            isHidden: con.fetch(DB_BOOL, "is_hidden"),
+            id: con.fetch(DB_STRING, "title"),
+            previewContent: con.fetch(DB_STRING, "preview_content"),
         } 
         :
         {
-            author: con.fetch(DB_STRING, 0),
-            content: con.fetch(DB_STRING, 1),
-            title: con.fetch(DB_STRING, 2),
-            date: con.fetch(DB_STRING, 3),
-            coverPhoto: con.fetch(DB_STRING, 4)
+            author,
+            content: con.fetch(DB_STRING, "content"),
+            title: con.fetch(DB_STRING, "display_title"),
+            date: con.fetch(DB_STRING, "post_date"),
+            coverPhoto: con.fetch(DB_STRING, "cover_photo")
         };
 
         //////////////////////////////////////
@@ -341,7 +451,7 @@ LightBlog.getPost = async function(id, showHidden = false)
     catch (e)
     {
         // Log that we"ve hit an exception.
-        print(`${LightBlog.LOG_TAG} Failed fetch post (${id}, ${e}). `);
+        print(`${LightBlog.LOG_TAG} Exception at getPost (${id}, ${e}). `);
 
         // Close our database connection.
         if (con)
@@ -352,6 +462,9 @@ LightBlog.getPost = async function(id, showHidden = false)
     return null
 }
  
+/**
+ * Returns a session object if it exists.
+ */
 LightBlog.getSession = function(response, request) 
 {
     // Get the raw cookie header.
@@ -372,8 +485,35 @@ LightBlog.getSession = function(response, request)
         if (!sessionIdentifier)
             return null;
 
+        //////////////////////////////////////
+
+        // Fetch the session.
+        const session = LightBlog.sessionTable[sessionIdentifier];
+
+        // Check if our session object exists.
+        if (!session)
+            return null;
+
+        //////////////////////////////////////
+
+        // Get the current date.
+        const now = new Date();
+
+        // Check if the session has expired.
+        if (now - session.created > session.expires)
+        {
+            // Delete the session.
+            delete LightBlog.sessionTable[sessionIdentifier];
+
+            // Return null.
+            return null;
+        }
+        else session.created = now;
+
+        //////////////////////////////////////
+        
         // Return the session object.
-        return LightBlog.sessionTable[sessionIdentifier];
+        return session;
     } 
     catch (e)
     {
@@ -385,6 +525,9 @@ LightBlog.getSession = function(response, request)
     }
 }
 
+/**
+ * Handles logging users out.
+ */
 LightBlog.handleLogout = function(response, request)
 {
     const session = LightBlog.getSession(response, request);
@@ -394,7 +537,7 @@ LightBlog.handleLogout = function(response, request)
         delete LightBlog.sessionTable[session.tag];
     }
 
-    response.redirect(LightBlog.INDEX_PATH, true, true);
+    response.redirect(LightBlog.INDEX_PATH, true, false);
 
     return FINISH;
 }
@@ -435,26 +578,13 @@ LightBlog.handleLogin = async function(response, request)
 
         ////////////////////////////////////
 
-        // Initialize our connection.
-        con = db.init(LightBlog.DB_CONNECTION_STRING);
+        const user = LightBlog.findUserByUsername(info.username);
 
-        // Prepare to select our user with the matching username.
-        con.prepare(`SELECT password, id, display_name FROM users WHERE username=? LIMIT 1`);
-
-        // Bind our username.
-        con.bind(info.username);
-
-        // Query our single row.
-        const isNonEmpty = await con.queryRow();
-
-        // Check if any user exists.
-        if (!isNonEmpty) 
-            throw "no matching user was found.";
-
-        ////////////////////////////////////
-
+        if (!user)
+            throw "no such user with that username was found.";
+ 
         // Fetch our hashed password.
-        const hashedPassword = con.fetch(DB_STRING, 0);
+        const hashedPassword = user.hash;
 
         ////////////////////////////////////
 
@@ -463,38 +593,25 @@ LightBlog.handleLogin = async function(response, request)
 
         ////////////////////////////////////
 
-        const randomString = (length) => 
-        {
-            let result = "";
-            const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            const charactersLength = characters.length;
-            for (let i = 0; i < length; i++)
-            {
-                result += characters.charAt(
-                    Math.floor(Math.random() * charactersLength)
-                );
-            }
-
-            return result;
-        };
-
         // Generate the session identifier.
-        const sessionIdentifier = randomString(LightBlog.SESSION_IDENTIFIER_LENGTH);
+        const sessionIdentifier = LightBlog.randomString(LightBlog.SESSION_IDENTIFIER_LENGTH);
 
         // Throw if our session identifier is a duplicate.
         if (sessionIdentifier in LightBlog.sessionTable)
             throw "duplicate session identifier";
 
         // Generate the cookie string.
-        const cookieString = Cookie.serialize(LightBlog.SESSION_NAME, sessionIdentifier, { });
+        const cookieString = Cookie.serialize(LightBlog.SESSION_NAME, sessionIdentifier, {
+            maxAge: (info.rememberMe ? LightBlog.SESSION_EXPIRY_EXTENDED : LightBlog.SESSION_EXPIRY) / 1000
+        });
 
         // Add our session object to the session table.
         LightBlog.sessionTable[sessionIdentifier] = 
         {
             created: new Date(),
+            expires: info.rememberMe ? LightBlog.SESSION_EXPIRY_EXTENDED : LightBlog.SESSION_EXPIRY,
             tag: sessionIdentifier,
-            id: con.fetch(DB_STRING, 1),
-            name: con.fetch(DB_STRING, 2)
+            id: user.id
         };
 
         // Set the cookie.
@@ -502,20 +619,28 @@ LightBlog.handleLogin = async function(response, request)
 
         ////////////////////////////////////
 
+        // Perform a clean up.
+        for (const key in LightBlog.sessionTable) 
+        {
+            // Fetch the session object.
+            const session = LightBlog.sessionTable[key];       
+
+            // Delete expired sessions.
+            if (new Date() - session.created > session.expires)
+            {
+                delete LightBlog.sessionTable[key];
+            }
+        }
+
+        ////////////////////////////////////
+
         // Set a successful result.
         result = { success: true };
-
-        // Close our database connection.
-        con.close();
     }
     catch (e)
     {
         // Log our error.
         print(`${LightBlog.LOG_TAG} Exception at handleLogin (${e})`);
-
-        // Close our connection if it"s open.
-        if (con) 
-           con.close();
 
         // Set our result.
         result = {
@@ -536,6 +661,9 @@ LightBlog.handleLogin = async function(response, request)
     return FINISH;
 }
 
+/**
+ * Handles checking if titles are available.
+ */
 LightBlog.handleCheckTitle = async function(response, request)
 {
     // Setup a result object.
@@ -614,6 +742,9 @@ LightBlog.handleCheckTitle = async function(response, request)
     return FINISH;
 }
 
+/**
+ * Handles creating new posts.
+ */
 LightBlog.handleNewPost = async function(response, request)
 {
     // Setup a result object.
@@ -702,6 +833,9 @@ LightBlog.handleNewPost = async function(response, request)
     return FINISH;
 }
 
+/**
+ * Handles updating content.
+ */
 LightBlog.handleUpdatePostContent = async function(response, request)
 {
     // Setup a result object.

@@ -22,6 +22,9 @@
                 <input type="text" class="form-control" id="username" name="username" placeholder="Username"><br><br>
                 <input type="password" class="form-control" id="password" name="password" placeholder="Password"><br><br>
                 <input type="submit" class="btn btn-primary" id="submit" value="Login">
+
+                <input type="checkbox" id="remember-me" name="remember-me" >
+                <label for="remember-me">Remember me</label>
             </form> 
         </div>
         <script>
@@ -38,6 +41,7 @@
                     body: JSON.stringify({
                         "username": document.getElementById("username").value,
                         "password": document.getElementById("password").value,
+                        "rememberMe": document.getElementById("remember-me").checked,
                     })
                 }) 
                 .then(response => response.json())

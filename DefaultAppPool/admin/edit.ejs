@@ -32,7 +32,7 @@ if (!post)
     </head>         
     <body> 
         <div class="topbar">
-            <a href="index">Control Panel</a> / <a><%= post.title %></a>
+            <a href="index">Control Panel</a> / <a id="title-top"><%= post.title %></a>
         </div>
         <div id="form-ext">  
             <div class="form-group">
@@ -222,6 +222,14 @@ if (!post)
                         if (data.success)
                         {
                             document.getElementById("info-title").textContent = "Autosaved! " + new Date().toString();
+                            document.getElementById("title-top").textContent = document.getElementById("title").value;
+                            document.title = `${document.getElementById("title").value} - LightBlog`;
+
+                            window.history.pushState(null, 
+                                document.title,
+                                `edit?${data.id}`
+                            );
+
                             document.getElementById("post-id").value = data.id;
                         }
                         else
