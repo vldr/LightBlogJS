@@ -17,6 +17,26 @@ Web.cacheTable = {};
 Web.directoryUpdateCallback = null;
  
 /**
+ * Handles any pre begin requests, used for deliverying cache.
+ */
+Web.handlePreBeginRequest = function(response, request)
+{
+    // Attempt to fetch a cache if it exists. 
+    const cache = Web.cacheTable[request.getPath()];
+
+    if (cache)
+    {
+        // Write our cached response.
+        response.write(cache, "text/html", "gzip");
+
+        // Return finish.
+        return FINISH;
+    }
+
+    return CONTINUE;
+}
+
+/**
  * Handles any raw request to the web server.
  */
 Web.handleRequest = function(response, request)
@@ -35,18 +55,6 @@ Web.handleRequest = function(response, request)
     }
 
     //////////////////////////////////////////
-
-    // Attempt to fetch a cache if it exists. 
-    const cache = Web.cacheTable[request.getPath()];
-
-    if (cache)
-    {
-        // Write our cached response.
-        response.write(cache, "text/html", "gzip");
-
-        // Return finish.
-        return FINISH;
-    }
 
     // Otherwise pass to the handle route method. 
     return Web.handleRoute(response, request, route.template);
@@ -159,17 +167,14 @@ Web.directoryUpdate = function()
 /**
  * Initializes the web framework.
  */
-Web.init = function(shouldRegister = true) 
+Web.init = function() 
 {
     // Check if the user wants to manually call handle request.
-    if (shouldRegister)
-        register(Web.handleRequest);
+    register(Web.handleRequest);
+    register(PRE_BEGIN_REQUEST, Web.handlePreBeginRequest);
       
     // Register for directory updates.
-    fs.register(Web.directoryUpdate);
-
-    // Perform a gzip operation for optimization.
-    pako.gzip(`WEB FRAMEWORK`);
+    fs.register(Web.directoryUpdate)
 }
 
 /**

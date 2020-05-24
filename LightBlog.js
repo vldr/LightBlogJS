@@ -29,6 +29,10 @@ LightBlog.DASHBOARD_PATH = "/admin/dashboard";
 // The path to index.
 LightBlog.INDEX_PATH = "/admin/";
 
+// Paths to the style and admin path.
+LightBlog.STYLE_PATH = "/style.css";
+LightBlog.ADMIN_STYLE_PATH = "/admin.css";
+
 // The object containg all the session by the session identifier.
 LightBlog.sessionTable = {};
 
