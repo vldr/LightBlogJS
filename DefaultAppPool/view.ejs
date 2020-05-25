@@ -54,6 +54,17 @@ response.cache = true;
                     <div class="postHeader">
                         <h1 class="postTitleOnPage"><%= post.title %></h1>
                         <span class="postDate"><%= post.date %> - <%= post.author %></span>
+                        <% if (post.keywords) { %>
+                            <div class="postKeywords">
+                                <% const keywords = post.keywords.split(","); %>
+                                <% for (let i = 0; i < keywords.length; i++) { %>
+                                    <% const keyword = keywords[i].trim(); %>  
+                                    <% if (keyword) { %> 
+                                        <div class="postKeyword"><%= keyword %></div>
+                                    <% } %> 
+                                <% } %> 
+                            </div>
+                        <% } %> 
                     </div>
                     <div class="postContent">
                         <p><%- marked(post.content) %></p>

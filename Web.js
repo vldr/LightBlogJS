@@ -70,31 +70,35 @@ Web.handleRoute = async function(response, request, routeTemplate)
  
     // Get our rendered page.
     const rendered = await routeTemplate(
-        { 
+        {  
             response: response,
-            request: request
+            request: request 
         }
-    );
+    ); 
+ 
+    // Get the path of the request.
+    const path = request.getPath(); 
 
     // Check if we should cache.
-    if (response.cache)
-    {
+    if (response.cache && !(path in Web.cacheTable))
+    {   
+        // Place an empty string inside while we compress.
+        Web.cacheTable[path] = "";
+ 
         // Generate a gzip content.
-        const cache = pako.gzip(rendered);
+        gzip.compress(rendered, 9).then((cache) => 
+        {
+            // Add the cache to the cache table.
+            Web.cacheTable[path] = cache;
 
-        // Add the cache to the cache table.
-        Web.cacheTable[request.getPath()] = cache;
+            print(`${Web.LOG_TAG} Finished caching for ${path}`);
+        });
 
-        print(`${Web.LOG_TAG} Caching response for ${request.getPath()}`);
-
-        // Write our response.
-        response.write(cache, "text/html", "gzip")
+        print(`${Web.LOG_TAG} Caching response for ${path}`);
     }
-    else 
-    {
-        // Otherwise, write our rendered page.
-        response.write(rendered);
-    }
+
+    // Otherwise, write our rendered page.
+    response.write(rendered);
 
     return FINISH;
 }
