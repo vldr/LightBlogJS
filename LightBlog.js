@@ -256,7 +256,7 @@ LightBlog.formattedDate = function()
  */
 LightBlog.parseTitle = function(title)
 {
-   return title.toLowerCase().trim().replace(/[^0-9a-z\s]/gi, "").replace(/\s/g, "-");
+   return title.toLowerCase().trim().replace(/[^0-9a-z\s\-]/gi, "").replace(/\s/g, "-");
 }
 
 /**
@@ -322,19 +322,19 @@ LightBlog.getPosts = async function(page = "0")
         // Loop throughout all the results.
         while (con.next())  
         {
-            const owner = con.fetch(DB_STRING, "owner");
+            const owner = con.fetch(db.STRING, "owner");
             const author = LightBlog.usersTable[owner] ? LightBlog.usersTable[owner].name : "(unknown)";
 
             // Push our post to the list.
             posts.push(
                 {
                     author,
-                    content: con.fetch(DB_STRING, "preview_content"),
-                    id: con.fetch(DB_STRING, "title"),
-                    date: con.fetch(DB_STRING, "post_date"),
-                    coverPhoto: con.fetch(DB_STRING, "cover_photo"), 
-                    title: con.fetch(DB_STRING, "display_title"),
-                    isHidden: con.fetch(DB_BOOL, "is_hidden")
+                    content: con.fetch(db.STRING, "preview_content"),
+                    id: con.fetch(db.STRING, "title"),
+                    date: con.fetch(db.STRING, "post_date"),
+                    coverPhoto: con.fetch(db.STRING, "cover_photo"), 
+                    title: con.fetch(db.STRING, "display_title"),
+                    isHidden: con.fetch(db.BOOL, "is_hidden")
                 }
             );
         }
@@ -424,33 +424,33 @@ LightBlog.getPost = async function(id, showHidden = false)
 
         //////////////////////////////////////
 
-        const owner = con.fetch(DB_STRING, "owner");
+        const owner = con.fetch(db.STRING, "owner");
         const author = LightBlog.usersTable[owner] ? LightBlog.usersTable[owner].name : "(unknown)";
 
         // Setup a post object.
         const post = showHidden ? 
         {
             author,
-            content: con.fetch(DB_STRING, "content"),
-            title: con.fetch(DB_STRING, "display_title"),
-            date: con.fetch(DB_STRING, "post_date"),
-            coverPhoto: con.fetch(DB_STRING, "cover_photo"),
-            isHidden: con.fetch(DB_BOOL, "is_hidden"),
-            id: con.fetch(DB_STRING, "title"),
-            previewContent: con.fetch(DB_STRING, "preview_content"),
-            desc: con.fetch(DB_STRING, "desc"),
-            keywords: con.fetch(DB_STRING, "keywords")
+            content: con.fetch(db.STRING, "content"),
+            title: con.fetch(db.STRING, "display_title"),
+            date: con.fetch(db.STRING, "post_date"),
+            coverPhoto: con.fetch(db.STRING, "cover_photo"),
+            isHidden: con.fetch(db.BOOL, "is_hidden"),
+            id: con.fetch(db.STRING, "title"),
+            previewContent: con.fetch(db.STRING, "preview_content"),
+            desc: con.fetch(db.STRING, "desc"),
+            keywords: con.fetch(db.STRING, "keywords")
         } 
         :
         {
             author,
-            content: con.fetch(DB_STRING, "content"),
-            previewContent: con.fetch(DB_STRING, "preview_content"),
-            title: con.fetch(DB_STRING, "display_title"),
-            date: con.fetch(DB_STRING, "post_date"),
-            coverPhoto: con.fetch(DB_STRING, "cover_photo"),
-            desc: con.fetch(DB_STRING, "desc"),
-            keywords: con.fetch(DB_STRING, "keywords")
+            content: con.fetch(db.STRING, "content"),
+            previewContent: con.fetch(db.STRING, "preview_content"),
+            title: con.fetch(db.STRING, "display_title"),
+            date: con.fetch(db.STRING, "post_date"),
+            coverPhoto: con.fetch(db.STRING, "cover_photo"),
+            desc: con.fetch(db.STRING, "desc"),
+            keywords: con.fetch(db.STRING, "keywords")
         };
 
         //////////////////////////////////////
@@ -787,12 +787,14 @@ LightBlog.handleNewPost = async function(response, request)
         );
 
         // Check if a title was provided
-        if (!info.title || info.title.length === 0) 
+        if (!info.title) 
             throw "no title provided.";
 
         // Transform our title.
         const title = LightBlog.parseTitle(info.title);
-        const displayTitle = info.title;
+
+        if (!title)
+            throw "no title provided. (2)";
 
         ////////////////////////////////////
 
@@ -805,7 +807,7 @@ LightBlog.handleNewPost = async function(response, request)
         // Bind our values.
         con.bind(session.id);
         con.bind(title);
-        con.bind(displayTitle);
+        con.bind(info.title);
         con.bind(LightBlog.formattedDate());
 
         // Execute our query.
@@ -855,7 +857,9 @@ LightBlog.handleNewPost = async function(response, request)
 LightBlog.handleUpdatePostContent = async function(response, request)
 {
     // Setup a result object.
-    let result = {};
+    let result = {
+        success: false
+    };
     
     // Setup a empty connection variable.
     let con = null;
@@ -890,24 +894,9 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
         ////////////////////////////////////
 
-        // Perform deletion, reset the info object afterwards.
-        if ("delete" in info)
-        {
-            con.prepare(`DELETE FROM posts WHERE title = ?`);
-            con.bind(info.id);
-
-            await con.exec();
-
-            info = {};
-        }
-
-        ////////////////////////////////////
-
-        if (info.title) 
+        if (info.title && (title = LightBlog.parseTitle(info.title))) 
         {
             con.prepare(`UPDATE posts SET title = ?, display_title = ? WHERE title = ?`);
-
-            const title = LightBlog.parseTitle(info.title);
 
             con.bind(title);
             con.bind(info.title);
@@ -916,10 +905,19 @@ LightBlog.handleUpdatePostContent = async function(response, request)
             await con.exec();
             con.reset();
 
-            result.id = title;
+            result.success = true;
+            result.id = title;       
         }
+        else if ("delete" in info)
+        {
+            con.prepare(`DELETE FROM posts WHERE title = ?`);
+            con.bind(info.id);
 
-        if ("content" in info) 
+            await con.exec();
+
+            result.success = true;
+        }   
+        else if ("content" in info) 
         {
             con.prepare(`UPDATE posts SET content = ? WHERE title = ?`);
 
@@ -928,9 +926,10 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
             await con.exec();
             con.reset();
+
+            result.success = true;
         }
-        
-        if ("previewContent" in info) 
+        else if ("previewContent" in info) 
         {
             con.prepare(`UPDATE posts SET preview_content = ? WHERE title = ?`);
 
@@ -939,9 +938,10 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
             await con.exec();
             con.reset();
-        }
 
-        if ("coverPhoto" in info) 
+            result.success = true;
+        }
+        else if ("coverPhoto" in info) 
         {
             con.prepare(`UPDATE posts SET cover_photo = ? WHERE title = ?`);
 
@@ -950,9 +950,10 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
             await con.exec();
             con.reset();
-        }
 
-        if ("desc" in info) 
+            result.success = true;
+        }
+        else if ("desc" in info) 
         {
             con.prepare(`UPDATE posts SET desc = ? WHERE title = ?`);
 
@@ -961,9 +962,10 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
             await con.exec();
             con.reset();
-        }
 
-        if ("keywords" in info) 
+            result.success = true;
+        }
+        else if ("keywords" in info) 
         {
             con.prepare(`UPDATE posts SET keywords = ? WHERE title = ?`);
 
@@ -972,9 +974,10 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
             await con.exec();
             con.reset();
+
+            result.success = true;
         }
-        
-        if ("hidden" in info) 
+        else if ("hidden" in info) 
         {
             con.prepare(`UPDATE posts SET is_hidden = ? WHERE title = ?`);
  
@@ -983,15 +986,17 @@ LightBlog.handleUpdatePostContent = async function(response, request)
 
             await con.exec();
             con.reset();
+
+            result.success = true;
         }
 
         ////////////////////////////////////
 
-        // Clear our cache.
-        Web.clearCache();
-
-        // Set a successful result.
-        result.success = true;
+        if (result.success)
+        {
+            // Clear our cache.
+            Web.clearCache();
+        }
 
         // Close our database connection.
         con.close();
@@ -1004,9 +1009,6 @@ LightBlog.handleUpdatePostContent = async function(response, request)
         // Close our connection if it"s open.
         if (con) 
            con.close();
-
-        // Set our result.
-        result.success = false;
     }
     
     /////////////////////////////////////////

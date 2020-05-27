@@ -86,7 +86,7 @@ Web.handleRoute = async function(response, request, routeTemplate)
         Web.cacheTable[path] = "";
  
         // Generate a gzip content.
-        gzip.compress(rendered, 9).then((cache) => 
+        gzip.compress(rendered, gzip.BEST_COMPRESSION).then((cache) => 
         {
             // Add the cache to the cache table.
             Web.cacheTable[path] = cache;
