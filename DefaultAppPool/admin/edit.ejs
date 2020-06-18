@@ -25,7 +25,14 @@ if (!post)
 
         <link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" onload="if(media!='all')media='all'" />
         <link href="<%= LightBlog.ADMIN_STYLE_PATH %>" rel="stylesheet" media="screen" onload="if(media!='all')media='all'">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" onload="if(media!='all')media='all'">
+        <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+        <style>
+            .editor-toolbar {
+                border-top: 1px solid #ddd;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+        </style>
 
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -159,11 +166,11 @@ if (!post)
                 </div>
             </div>
         </div>
-    
-        <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+
+        <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
         <script>
-            var previewContent = new SimpleMDE({ element: document.getElementById("preview-content") });
-            var content = new SimpleMDE({ element: document.getElementById("content") });
+            var previewContent = new EasyMDE({ element: document.getElementById("preview-content") });
+            var content = new EasyMDE({ element: document.getElementById("content") });
             
             function watch(name)
             {
