@@ -1,5 +1,6 @@
 <% 
-const post = await LightBlog.getPost(request.getQueryString());
+const session = LightBlog.getSession(response, request);
+const post = await LightBlog.getPost(request.getQueryString(), session ? true : false);
 
 if (!post)  
 {
@@ -7,7 +8,10 @@ if (!post)
     return "";
 }
 
-response.cache = true;
+if (!session)
+{
+    response.cache = true;
+}
 %>
 
 <!DOCTYPE html>  

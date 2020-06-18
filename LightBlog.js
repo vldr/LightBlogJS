@@ -616,7 +616,8 @@ LightBlog.handleLogin = async function(response, request)
 
         // Generate the cookie string.
         const cookieString = Cookie.serialize(LightBlog.SESSION_NAME, sessionIdentifier, {
-            maxAge: (info.rememberMe ? LightBlog.SESSION_EXPIRY_EXTENDED : LightBlog.SESSION_EXPIRY) / 1000
+            maxAge: (info.rememberMe ? LightBlog.SESSION_EXPIRY_EXTENDED : LightBlog.SESSION_EXPIRY) / 1000,
+            path: "/"
         });
 
         // Add our session object to the session table.
