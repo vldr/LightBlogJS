@@ -171,6 +171,7 @@ if (!post)
         <script>
             var previewContent = new EasyMDE({ element: document.getElementById("preview-content") });
             var content = new EasyMDE({ element: document.getElementById("content") });
+            var inputDelay = 1000;
             
             function watch(name)
             {
@@ -203,7 +204,7 @@ if (!post)
                                 document.getElementById("info-${name}").style = "color:red;";
                             }
                         });
-                    }, 500);
+                    }, inputDelay);
                 };`);
             }
 
@@ -240,7 +241,7 @@ if (!post)
                             document.getElementById("info-content").style = "color:red;";
                         }
                     });
-                }, 500);
+                }, inputDelay);
             });
 
             let inputTimeoutPreviewContent;
@@ -273,7 +274,7 @@ if (!post)
                             document.getElementById("info-preview-content").style = "color:red;";
                         }
                     });
-                }, 500);
+                }, inputDelay);
             });
             
             let inputTimeoutTitle;
@@ -314,7 +315,7 @@ if (!post)
                             document.getElementById("info-title").style = "color:red;";
                         }
                     });
-                }, 500);
+                }, inputDelay);
             };
 
            let inputTimeoutCoverPhoto;
@@ -347,7 +348,7 @@ if (!post)
                             document.getElementById("info-cover-photo").style = "color:red;";
                         }
                     });
-                }, 500);
+                }, inputDelay);
             };
 
             let inputTimeoutHidden;
@@ -376,7 +377,7 @@ if (!post)
                             document.getElementById("info-hidden").style = "color:red;";
                         }
                     });
-                }, 500);
+                }, inputDelay);
             };
 
             document.getElementById("delete-post").onclick = function(event) 
