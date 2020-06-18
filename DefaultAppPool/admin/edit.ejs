@@ -152,11 +152,9 @@ if (!post)
         </div>
     
         <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/dchest/fossil-delta-js@v0.2.5/fossil-delta.min.js"></script>
         <script>
             var previewContent = new SimpleMDE({ element: document.getElementById("preview-content") });
             var content = new SimpleMDE({ element: document.getElementById("content") });
-            const inputDelay = 500;
             
             function watch(name)
             {
@@ -189,7 +187,7 @@ if (!post)
                                 document.getElementById("info-${name}").style = "color:red;";
                             }
                         });
-                    }, inputDelay);
+                    }, 500);
                 };`);
             }
 
@@ -197,8 +195,6 @@ if (!post)
             watch("desc");
 
             let inputTimeoutContent;
-
-            let lastContent = content.value(); 
             content.codemirror.on("change", () =>
             {
                 document.getElementById("info-content").textContent = "Saving...";
@@ -221,7 +217,6 @@ if (!post)
                         if (data.success) 
                         {
                             document.getElementById("info-content").textContent = "Autosaved! " + new Date().toString();
-                            lastContent = content.value(); 
                         }
                         else
                         {
@@ -229,7 +224,7 @@ if (!post)
                             document.getElementById("info-content").style = "color:red;";
                         }
                     });
-                }, inputDelay);
+                }, 500);
             });
 
             let inputTimeoutPreviewContent;
@@ -262,7 +257,7 @@ if (!post)
                             document.getElementById("info-preview-content").style = "color:red;";
                         }
                     });
-                }, inputDelay);
+                }, 500);
             });
             
             let inputTimeoutTitle;
@@ -303,7 +298,7 @@ if (!post)
                             document.getElementById("info-title").style = "color:red;";
                         }
                     });
-                }, inputDelay);
+                }, 500);
             };
 
            let inputTimeoutCoverPhoto;
@@ -336,7 +331,7 @@ if (!post)
                             document.getElementById("info-cover-photo").style = "color:red;";
                         }
                     });
-                }, inputDelay);
+                }, 500);
             };
 
             let inputTimeoutHidden;
@@ -365,7 +360,7 @@ if (!post)
                             document.getElementById("info-hidden").style = "color:red;";
                         }
                     });
-                }, inputDelay);
+                }, 500);
             };
 
             document.getElementById("delete-post").onclick = function(event) 

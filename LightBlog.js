@@ -12,7 +12,6 @@ LightBlog.DB_CONNECTION_STRING = "sqlite3:db=C:\\Users\\Public\\db.db";
 
 // The prefixed tag used on logs.
 LightBlog.LOG_TAG = "[LIGHTBLOG]";
-LightBlog.IPC_TAG = "SessionTable";
 
 // The name of the session cookie.
 LightBlog.SESSION_NAME = "lightblog.session";
@@ -35,7 +34,7 @@ LightBlog.STYLE_PATH = "/style.css";
 LightBlog.ADMIN_STYLE_PATH = "/admin.css";
 
 // The object containg all the session by the session identifier.
-LightBlog.sessionTable = null;
+LightBlog.sessionTable = {};
 
 // A list containing all the users.
 LightBlog.usersTable = [];
@@ -61,8 +60,6 @@ LightBlog.init = function()
     Web.addEndpoint("/admin/check", LightBlog.handleCheckTitle);  
     Web.addEndpoint("/admin/new/post", LightBlog.handleNewPost);  
     Web.addEndpoint("/admin/update/post", LightBlog.handleUpdatePostContent);  
-
-    LightBlog.sessionTable = ipc.init(LightBlog.IPC_TAG);
 }
 
 /**
@@ -505,7 +502,7 @@ LightBlog.getSession = function(response, request)
         //////////////////////////////////////
 
         // Fetch the session.
-        const session = LightBlog.sessionTable.get(sessionIdentifier);
+        const session = LightBlog.sessionTable[sessionIdentifier];
 
         // Check if our session object exists.
         if (!session)
@@ -520,7 +517,7 @@ LightBlog.getSession = function(response, request)
         if (now - session.created > session.expires)
         {
             // Delete the session.
-            ipc.set(sessionIdentifier, null);
+            delete LightBlog.sessionTable[sessionIdentifier];
 
             // Return null.
             return null;
@@ -551,7 +548,7 @@ LightBlog.handleLogout = function(response, request)
 
     if (session)
     {
-        LightBlog.sessionTable.set(session.tag, null);
+        delete LightBlog.sessionTable[session.tag];
     }
 
     response.redirect(LightBlog.INDEX_PATH, true, false);
@@ -614,7 +611,7 @@ LightBlog.handleLogin = async function(response, request)
         const sessionIdentifier = LightBlog.randomString(LightBlog.SESSION_IDENTIFIER_LENGTH);
 
         // Throw if our session identifier is a duplicate.
-        if (LightBlog.sessionTable.get(sessionIdentifier))
+        if (sessionIdentifier in LightBlog.sessionTable)
             throw "duplicate session identifier";
 
         // Generate the cookie string.
@@ -623,17 +620,32 @@ LightBlog.handleLogin = async function(response, request)
         });
 
         // Add our session object to the session table.
-        LightBlog.sessionTable.set(sessionIdentifier,
+        LightBlog.sessionTable[sessionIdentifier] = 
         {
             created: new Date(),
             expires: info.rememberMe ? LightBlog.SESSION_EXPIRY_EXTENDED : LightBlog.SESSION_EXPIRY,
             tag: sessionIdentifier,
             id: user.id
-        });
+        };
 
         // Set the cookie.
         response.setHeader("Set-Cookie", cookieString);
-        
+
+        ////////////////////////////////////
+
+        // Perform a clean up.
+        for (const key in LightBlog.sessionTable) 
+        {
+            // Fetch the session object.
+            const session = LightBlog.sessionTable[key];       
+
+            // Delete expired sessions.
+            if (new Date() - session.created > session.expires)
+            {
+                delete LightBlog.sessionTable[key];
+            }
+        }
+
         ////////////////////////////////////
 
         // Set a successful result.

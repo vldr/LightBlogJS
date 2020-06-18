@@ -7,15 +7,14 @@ var Web = {};
 // A prefixed tag for our logs.
 Web.LOG_TAG = "[WEB]";
 
-Web.CACHE_TAG = "WebCache";
-
 // A table for routing to different pages.
 Web.routeTable = {};
 
+// A table containing all cached webpages.
+Web.cacheTable = {}; 
+
 // A callback that can be set for users of the framework.
 Web.directoryUpdateCallback = null;
-
-Web.cacheTable = null;
  
 /**
  * Handles any pre begin requests, used for deliverying cache.
@@ -23,10 +22,10 @@ Web.cacheTable = null;
 Web.handlePreBeginRequest = function(response, request)
 {
     // Attempt to fetch a cache if it exists. 
-    const cache = Web.cacheTable.get(request.getPath());
- 
-    if (cache != null)
-    { 
+    const cache = Web.cacheTable[request.getPath()];
+
+    if (cache)
+    {
         // Write our cached response.
         response.write(cache, "text/html", "gzip");
 
@@ -54,7 +53,7 @@ Web.handleRequest = function(response, request)
         // Call the endpoint callback.
         return route.endpoint(response, request); 
     }
- 
+
     //////////////////////////////////////////
 
     // Otherwise pass to the handle route method. 
@@ -78,20 +77,19 @@ Web.handleRoute = async function(response, request, routeTemplate)
     ); 
  
     // Get the path of the request.
-    const path = request.getPath();
-    const cache = Web.cacheTable.get(path);
+    const path = request.getPath(); 
 
     // Check if we should cache.
-    if (response.cache && cache == null)
+    if (response.cache && !(path in Web.cacheTable))
     {   
         // Place an empty string inside while we compress.
-        Web.cacheTable.set(path, "");
+        Web.cacheTable[path] = "";
  
         // Generate a gzip content.
         gzip.compress(rendered, gzip.BEST_COMPRESSION).then((cache) => 
         {
             // Add the cache to the cache table.
-            Web.cacheTable.set(path, cache); 
+            Web.cacheTable[path] = cache;
 
             print(`${Web.LOG_TAG} Finished caching for ${path}`);
         });
@@ -180,9 +178,7 @@ Web.init = function()
     register(PRE_BEGIN_REQUEST, Web.handlePreBeginRequest);
       
     // Register for directory updates.
-    fs.register(Web.directoryUpdate);
-
-    Web.cacheTable = ipc.init(Web.CACHE_TAG);
+    fs.register(Web.directoryUpdate)
 }
 
 /**
@@ -198,14 +194,7 @@ Web.setDirectoryUpdateCallback = function(callback)
  */
 Web.clearCache = function()
 {
-    if (Web.cacheTable)
-    {
-        print(`${Web.LOG_TAG} Clearing cache table.`);
-        Web.cacheTable.close();
-        Web.cacheTable = ipc.init(Web.CACHE_TAG);
-    }
-    else
-    {
-        print(`${Web.LOG_TAG} Cache table is invalid.`);
-    }
+    print(`${Web.LOG_TAG} Clearing cache table.`);
+
+    Web.cacheTable = {};
 }

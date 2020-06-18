@@ -2,11 +2,11 @@
 const session = LightBlog.getSession(response, request);
 
 if (!session)
-{ 
+{
     response.redirect(LightBlog.INDEX_PATH, true, false);
     return "";
 }
-%>  
+%> 
 <!DOCTYPE html>  
 <html> 
     <head>  
