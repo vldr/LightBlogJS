@@ -13,6 +13,10 @@ LightBlog.DB_CONNECTION_STRING = "sqlite3:db=C:\\Users\\Public\\db.db";
 // The prefixed tag used on logs.
 LightBlog.LOG_TAG = "[LIGHTBLOG]";
 
+// The name of the users json file.
+LightBlog.USERS_FILE_NAME = "users.json";
+LightBlog.SESSION_FILE_NAME = "sessions.json";
+
 // The name of the session cookie.
 LightBlog.SESSION_NAME = "lightblog.session";
 
@@ -21,7 +25,7 @@ LightBlog.SESSION_IDENTIFIER_LENGTH = 33;
 
 // The amount of time(ms) a session stays valid for.
 LightBlog.SESSION_EXPIRY = 1500000;
-LightBlog.SESSION_EXPIRY_EXTENDED = 2590000000;
+LightBlog.SESSION_EXPIRY_EXTENDED = 959000000;
 
 // Path to the dashboard.
 LightBlog.DASHBOARD_PATH = "/admin/dashboard";
@@ -46,6 +50,7 @@ LightBlog.init = function()
 { 
     LightBlog.initDb();
     LightBlog.initUsers();
+    LightBlog.initSession();
  
     Web.init(); 
     Web.addRoute(["/", "/index"], "index.ejs");  
@@ -119,6 +124,27 @@ LightBlog.initDb = function()
 }
 
 /**
+ * Initializes the session table.
+ */
+LightBlog.initSession = async function()
+{
+    // Check if the file exists.
+    if (!fs.exists(LightBlog.SESSION_FILE_NAME))
+    {
+        print(`${LightBlog.LOG_TAG} No ${LightBlog.SESSION_FILE_NAME} file exists, skipping.`);
+        return;
+    }
+
+    // Fetch the users file.
+    const data = fs.read(LightBlog.SESSION_FILE_NAME);
+
+    // Update the session table.
+    LightBlog.sessionTable = JSON.parse(data);
+
+    print(`${LightBlog.LOG_TAG} Initialized sessions successfully.`);
+}
+
+/**
  * Initializes the users table.
  */
 LightBlog.initUsers = async function()
@@ -126,14 +152,14 @@ LightBlog.initUsers = async function()
     try 
     {
         // Check if the file exists.
-        if (!fs.exists("users.json"))
+        if (!fs.exists(LightBlog.USERS_FILE_NAME))
         {
-            print(`${LightBlog.LOG_TAG} No users.json file exists, skipping.`);
+            print(`${LightBlog.LOG_TAG} No ${LightBlog.USERS_FILE_NAME} file exists, skipping.`);
             return;
         }
 
         // Fetch the users file.
-        const data = fs.read("users.json");
+        const data = fs.read(LightBlog.USERS_FILE_NAME);
 
         // Parse the json data.
         const users = JSON.parse(data);
@@ -166,7 +192,7 @@ LightBlog.initUsers = async function()
                 delete user.password;
 
                 // Write our parsed results back into the file.
-                fs.write("users.json", JSON.stringify(users));
+                fs.write(LightBlog.USERS_FILE_NAME, JSON.stringify(users));
             }
 
             if (!user.hash)
@@ -646,6 +672,8 @@ LightBlog.handleLogin = async function(response, request)
                 delete LightBlog.sessionTable[key];
             }
         }
+
+        fs.write(LightBlog.SESSION_FILE_NAME, JSON.stringify(LightBlog.sessionTable));
 
         ////////////////////////////////////
 

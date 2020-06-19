@@ -2,4 +2,4 @@
 load("LightBlog.js"); 
 
 // Initialize database.  
-LightBlog.init();
+LightBlog.init(); 
