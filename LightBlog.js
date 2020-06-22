@@ -545,6 +545,9 @@ LightBlog.getSession = function(response, request)
             // Delete the session.
             delete LightBlog.sessionTable[sessionIdentifier];
 
+            // Write our session file to disk.
+            fs.write(LightBlog.SESSION_FILE_NAME, JSON.stringify(LightBlog.sessionTable));
+
             // Return null.
             return null;
         }
@@ -575,6 +578,9 @@ LightBlog.handleLogout = function(response, request)
     if (session)
     {
         delete LightBlog.sessionTable[session.tag];
+
+        // Write our session file to the disk.
+        fs.write(LightBlog.SESSION_FILE_NAME, JSON.stringify(LightBlog.sessionTable));
     }
 
     response.redirect(LightBlog.INDEX_PATH, true, false);
@@ -673,6 +679,7 @@ LightBlog.handleLogin = async function(response, request)
             }
         }
 
+        // Write our session to the disk.
         fs.write(LightBlog.SESSION_FILE_NAME, JSON.stringify(LightBlog.sessionTable));
 
         ////////////////////////////////////
